@@ -1,319 +1,123 @@
-<!-- ANGELO POLGROSSI | 04124856320 -->
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Registrarse</title>
-    <link rel="shortcut icon" href="favicon.png">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-Zenh87qX5JnK2Jl0vWa8Ck2rdkQ2Bzep5IDxbcnCeuOxjzrPF/et3URy9Bv1WTRi" crossorigin="anonymous">
-</head>
-<body>
-    <div
-    style="
-      background: url('salonestudiosjuridicos.jpg') no-repeat center center fixed;
-      background-size: cover;
-    ">
-            <div class="container">
-                <div class="row vh-100 justify-content-center align-items-center">
-                    <div class="col-auto p-5">
 <?php
+require __DIR__ . '/src/bootstrap.php';
+require __DIR__ . '/src/Repositories.php';
+require __DIR__ . '/src/layout.php';
+$emailAttempt = $_POST['correo'] ?? '';
+if (!verify_csrf()) { log_security_event('csrf_register_fail', ['email' => $emailAttempt]); redirect('regis.php'); }
 
 use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\SMTP;
 use PHPMailer\PHPMailer\Exception;
 
-require 'PHPMailer.php'; // Only file you REALLY need
-require 'Exception.php'; // If you want to debug
+require 'PHPMailer.php';
+require 'Exception.php';
 require 'SMTP.php';
 
-                $ci = $_POST["ci"];
-                $ip = $_POST["ip"];
-                $correo = $_POST["correo"];
-                $correo2 = $_POST["correo2"];
-                $contra = $_POST["contra"];
-                $contra2 = $_POST["contra2"];
+$ci = $_POST['ci'] ?? '';
+$ip = $_POST['ip'] ?? '';
+$correo = $_POST['correo'] ?? '';
+$correo2 = $_POST['correo2'] ?? '';
+$contra = $_POST['contra'] ?? '';
+$contra2 = $_POST['contra2'] ?? '';
 
+if ($ci === '' || $ip === '' || $correo === '' || $contra === '') {
+    redirect('index.php');
+}
 
-                if ($ci == "" or $ip == "" or $correo == "" or $contra == "" ) {
-                    header("Location: index.php");
-    
-              exit();
-                } else {
+$lawRepo = new LawyerRepository(db());
+$userRepo = new UserRepository(db());
 
-                $consultclie= "SELECT * FROM SACLIE where CodClie like '%$ci%'";
-                $consultclie2= "SELECT * FROM SACLIE where ID3 like '%$ci%'";
-                $consultclieip= "SELECT * FROM SACLIE where Clase like '%$ip%'";
-    
-                $serverName = "sql5111.site4now.net"; 
-$connectionInfo = array( "Database"=>"db_aa07eb_coleabg", "UID"=>"db_aa07eb_coleabg_admin", "PWD"=>"$0p0rt3ca" ,'ReturnDatesAsStrings'=>true);
-require './conn.php'; $conn = sqlsrv_connect(DataConnect()[0], DataConnect()[1]);
+// Try to find lawyer by cedula (CodClie or ID3) and by Inpre (Clase)
+$byCedula = $lawRepo->findByCedula($ci) ?? $lawRepo->findById3($ci);
+$byInpre  = $lawRepo->findByInpre($ip);
 
-                $stmtclieip = sqlsrv_query( $conn, $consultclieip);
-                $rowclieip = sqlsrv_fetch_array( $stmtclieip, SQLSRV_FETCH_ASSOC);
-    
-                $nullornotclieip = is_null($rowclieip);
+render_header('Registrarse', 'salonestudiosjuridicos.jpg');
+echo "<div class='container'><div class='row vh-100 justify-content-center align-items-center'><div class='col-auto p-5'>";
 
-                if ($nullornotclieip == false) {
-                    $stmtclie = sqlsrv_query( $conn, $consultclie);
-                $rowclie = sqlsrv_fetch_array( $stmtclie, SQLSRV_FETCH_ASSOC);
-    
-                $nullornotclie = is_null($rowclie);
+if (!$byInpre || !$byCedula || ($byInpre['CodClie'] !== $byCedula['CodClie'])) {
+    echo alert('danger', 'Cédula e Inpre no coinciden o abogado no inscrito.');
+    back_links();
+    render_footer();
+    exit;
+}
 
-                $stmtclie2 = sqlsrv_query( $conn, $consultclie2);
-                $rowclie2 = sqlsrv_fetch_array( $stmtclie2, SQLSRV_FETCH_ASSOC);
-    
-                $nullornotclie2 = is_null($rowclie2);
+$codClie = $byCedula['CodClie'];
+$clase  = $byCedula['Clase'];
 
-                    if ($nullornotclie == false or $nullornotclie2 == false) {
+// Checks for duplicates
+if ($userRepo->codClieExists($codClie) || $userRepo->claseExists($ip)) {
+    echo alert('danger', 'Usuario ya registrado.');
+    back_links();
+    render_footer();
+    exit;
+}
 
-                        if ($rowclieip['CodClie'] == $rowclie['CodClie'] or $rowclieip['CodClie'] == $rowclie2['CodClie']) {
+if ($userRepo->emailExists($correo)) {
+    echo alert('danger', 'Correo electrónico ya registrado.');
+    back_links();
+    render_footer();
+    exit;
+}
 
-                            $consultusers = "SELECT * FROM USUARIOS where CodClie like '%$ci%'";
+if ($correo !== $correo2) {
+    echo alert('danger', 'Los correos electrónicos no coinciden.');
+    back_links();
+    render_footer();
+    exit;
+}
+if ($contra !== $contra2) {
+    echo alert('danger', 'Las contraseñas no coinciden.');
+    back_links();
+    render_footer();
+    exit;
+}
 
-                            $stmtusers = sqlsrv_query( $conn, $consultusers);
-                            $rowclieusers = sqlsrv_fetch_array( $stmtusers, SQLSRV_FETCH_ASSOC);
-    
-                            $nullornotusers = is_null($rowclieusers);
+// Create user with hashed password (backwards compatible login still works for legacy rows)
+if (!$userRepo->createUserHashed($correo, $contra, $clase, $codClie)) {
+    echo alert('danger', 'Ha ocurrido un error al crear el usuario.');
+    back_links();
+    render_footer();
+    exit;
+}
 
-                            $consultusersip = "SELECT * FROM USUARIOS where Clase like '%$ip%'";
+// Attempt to send email
+try {
+    if (!filter_var($correo, FILTER_VALIDATE_EMAIL)) {
+        throw new Exception('Email inválido');
+    }
+    $mail = new PHPMailer(true);
+    $mail->SMTPDebug = 0;
+    $mail->isSMTP();
+    $mail->Host = getenv('SMTP_HOST') ?: 'smtp.gmail.com';
+    $mail->SMTPAuth = true;
+    $mail->Username = getenv('SMTP_USER') ?: 'example@example.com';
+    $mail->Password = getenv('SMTP_PASS') ?: 'password';
+    $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
+    $mail->Port = 465;
+    $mail->setFrom('coleabgca@gmail.com', 'Colegio de Abogados del Estado Carabobo');
+    $mail->addAddress($correo, $ci);
+    $mail->isHTML(true);
+    $mail->CharSet = 'UTF-8';
+    $mail->Subject = 'Bienvenido al Colegio de Abogados del Estado Carabobo!';
+    $mail->Body = '<h1>Sus datos de usuario son:</h1><br><b>Usuario: ' . h($correo) . '</b><br><b>Contraseña: ' . h($contra) . '</b><br><p><em>Si tiene algún problema contacte a informaticacolegioabogados@gmail.com</em></p>';
+    $mail->AltBody = 'Usuario: ' . $correo . ' Contraseña: ' . $contra;
+    $mail->send();
+    echo alert('info', 'Email con sus datos enviado al correo proporcionado.');
+} catch (Exception $e) {
+    echo alert('danger', 'Error al enviar el email con los datos de usuario.');
+}
 
-                            $stmtusersip = sqlsrv_query( $conn, $consultusersip);
-                            $rowclieusersip = sqlsrv_fetch_array( $stmtusersip, SQLSRV_FETCH_ASSOC);
-    
-                            $nullornotusersip = is_null($rowclieusersip);
+echo alert('success', 'Usuario creado de forma exitosa, ya puede ingresar al sistema.');
+echo "<form action='ingre.php'><input type='submit' class='btn btn-success w-100' value='Ingresar'></form><br>";
+back_links();
 
-                            if ($nullornotusers == true && $nullornotusersip == true) {
+echo "</div></div></div>";
+render_footer();
 
-                                $consultusersco = "SELECT * FROM USUARIOS where email like '%$correo%'";
+function alert(string $type, string $message): string {
+    return "<div class='alert alert-" . h($type) . "' role='alert'>" . h($message) . "</div>";
+}
 
-                            $stmtusersco = sqlsrv_query( $conn, $consultusersco);
-                            $rowclieusersco = sqlsrv_fetch_array( $stmtusersco, SQLSRV_FETCH_ASSOC);
-    
-                            $nullornotusersco = is_null($rowclieusersco);
-
-                            if ($nullornotusersco == true) {
-
-                            if ($correo == $correo2) {
-                                
-                                if ($contra == $contra2) {
-
-                                    $consultcreate= "INSERT INTO USUARIOS (email, pass, Clase, CodClie)
-                                    VALUES ('$correo', '$contra', '$rowclie[Clase]', '$rowclie[CodClie]' );";
-                                    
-                                    $stmtcreate = sqlsrv_query( $conn, $consultcreate);
-                                    
-                                    if ($stmtcreate == false) {
-                                        echo "<div class='alert alert-danger' role='alert'>
-                    Ha ocurrido un error, por favor intente de nuevo!
-                </div>";
-                    echo        
-            "<br>
-            <form action='regis.php'>
-            <button type='submit' id='buttom' class='btn btn-primary'>Intente de nuevo</button>
-            
-            </form>
-            <br>
-            <form action='index.php'>
-        <button type='submit' id='buttom' class='btn btn-warning'>Salir</button>
-        </form>"
-            ;
-                                    } else {
-
-                                        $mail = new PHPMailer(true);
-
-                                        try {
-
-                                            if (!filter_var($correo, FILTER_VALIDATE_EMAIL)) {
-                                                throw new Exception('Dirección de correo electrónico no válida.');
-                                              }
-
-                                            //Server settings
-                                            $mail->SMTPDebug = 0;                      //Enable verbose debug output
-                                            $mail->isSMTP();                                            //Send using SMTP
-                                            $mail->Host       = 'smtp.gmail.com';                     //Set the SMTP server to send through
-                                            $mail->SMTPAuth   = true;                                   //Enable SMTP authentication
-                                            $mail->Username   = 'coleabgca@gmail.com';                     //SMTP username
-                                            $mail->Password   = 'nqqirendnyzasbyf';                               //SMTP password
-                                            $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;            //Enable implicit TLS encryption
-                                            $mail->Port       = 465;                                    //TCP port to connect to; use 587 if you have set `SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS`
-
-                                            //Recipients
-                                            $mail->setFrom('coleabgca@gmail.com', 'Colegio de Abogados
-                                            del Estado Carabobo');
-                                            $mail->addAddress("$correo", "$ci");     //Add a recipient
-                                            //$mail->addAddress('ellen@example.com');               //Name is optional
-                                            //$mail->addReplyTo('info@example.com', 'Information');
-                                            //$mail->addCC('cc@example.com');
-                                            //$mail->addBCC('bcc@example.com');
-
-                                            //Attachments
-                                            //$mail->addAttachment('/var/tmp/file.tar.gz');         //Add attachments
-                                            //$mail->addAttachment('/tmp/image.jpg', 'new.jpg');    //Optional name
-
-                                            //Content
-                                            $mail->isHTML(true); 
-                                            $mail->CharSet = 'UTF-8';                                 //Set email format to HTML
-                                            $mail->Subject = 'Bienvenido al Colegio de Abogados del Estado 
-                                            Carabobo!';
-                                            $mail->Body    = '<h1>Sus datos de usuario son:</h1>
-                                            <br>
-                                            <b>Usuario: ' . $correo . '</b>' . '<br>' .
-                                            '<b>Contraseña: ' . $contra . '</b>' . '<br>' .
-                                            '<p><em>Si tiene algun problema con respecto al funcionamiento
-                                            de la pagina web no dude en contactarnos al correo electronico informaticacolegioabogados@gmail.com</em></p>';
-                                            $mail->AltBody = 'Sus datos de usuario son: Usuario: ' . $correo . ' '. 'Contraseña: ' . $contra . ' ' . 
-                                            'Si tiene algun problema con respecto al funcionamiento
-                                            de la pagina web no dude en contactarnos al correo electronico informaticacolegioabogados@gmail.com';
-                                            
-                                            if (!$mail->send()) {
-                                                throw new Exception($mail->ErrorInfo);
-                                              }
-                                            
-                                              echo "<div class='alert alert-info' role='alert'>
-                                              Email con sus datos de usuario enviado
-                                              al correo electronico proporcionado $correo</div>";
-                                              
-                                            } catch (Exception $e) {
-                                                echo "<div class='alert alert-danger' role='alert'>
-                                              Ha ocurrido un error al momento de enviar el email
-                                              con sus datos de usuario
-                                              al correo electronico proporcionado $correo</div>";
-                                            }
-
-                                        echo "<div class='alert alert-success' role='alert'>
-                    Usuario creado de forma exitosa, ya puede ingresar al sistema!
-                </div>";
-                echo "</form>
-                                        <br>
-                                        <form action='ingre.php'>
-                                        <input type='submit' class='btn btn-success w-100' value='Ingresar'>
-                                        </form>";
-                    echo        
-            "</form>
-            <br>
-            <form action='index.php'>
-            <button type='submit' id='buttom' class='btn btn-warning'>Salir</button>
-            </form>";
-                                    }
-
-                                } else {
-                                    echo "<div class='alert alert-danger' role='alert'>
-                    Las contraseñas no coinciden, por favor intente de nuevo!
-                </div>";
-                    echo        
-            "<br>
-            <form action='regis.php'>
-            <button type='submit' id='buttom' class='btn btn-primary'>Intente de nuevo</button>
-            </form>
-            <br>
-            <form action='index.php'>
-        <button type='submit' id='buttom' class='btn btn-warning'>Salir</button>
-        </form>";
-                                }
-                            } else {
-                                echo "<div class='alert alert-danger' role='alert'>
-                        
-                                Los correos electronicos no coinciden, por favor intente de nuevo...
-                    </div>";
-                        echo        
-                "<br>
-                <form action='regis.php'>
-                <button type='submit' id='buttom' class='btn btn-primary'>Intente de nuevo</button>
-                </form>
-                <br>
-                <form action='index.php'>
-            <button type='submit' id='buttom' class='btn btn-warning'>Salir</button>
-            </form>";
-                            }
-                            } else {
-                                echo "<div class='alert alert-danger' role='alert'>
-                                Correo electronico ya registrado!
-                    
-                </div>";
-                    echo        
-            "<br>
-            <form action='regis.php'>
-            <button type='submit' id='buttom' class='btn btn-primary'>Intente de nuevo</button>
-            </form>
-            <br>
-            <form action='index.php'>
-        <button type='submit' id='buttom' class='btn btn-warning'>Salir</button>
-        </form>";
-                            }
-                        
-                        } else {
-                            echo "<div class='alert alert-danger' role='alert'>
-                            Usuario ya registrado!
-                    
-                </div>";
-                    echo        
-            "<br>
-            <form action='regis.php'>
-            <button type='submit' id='buttom' class='btn btn-primary'>Intente de nuevo</button>
-            </form>
-            <br>
-            <form action='index.php'>
-        <button type='submit' id='buttom' class='btn btn-warning'>Salir</button>
-        </form>";
-                        }
-                        } else {
-                            echo "<div class='alert alert-danger' role='alert'>
-                            Cedula e Inpre no coinciden!
-                </div>";
-                    echo        
-            "<br>
-            <form action='regis.php'>
-            <button type='submit' id='buttom' class='btn btn-primary'>Intente de nuevo</button>
-            </form>
-            <br>
-            <form action='index.php'>
-        <button type='submit' id='buttom' class='btn btn-warning'>Salir</button>
-        </form>";
-                        }
-
-                    } else {
-                        echo "<div class='alert alert-danger' role='alert'>
-                    Abogado no inscrito o datos de identidad ingresados de forma incorrecta!
-                </div>";
-                    echo        
-            "<br>
-            <form action='regis.php'>
-            <button type='submit' id='buttom' class='btn btn-primary'>Intente de nuevo</button>
-            </form>
-            <br>
-            <form action='index.php'>
-        <button type='submit' id='buttom' class='btn btn-warning'>Salir</button>
-        </form>";
-                    }
-
-                } else {
-                    echo "<div class='alert alert-danger' role='alert'>
-                    Abogado no inscrito o datos de identidad ingresados de forma incorrecta!
-                </div>";
-                    echo        
-            "<br>
-            <form action='regis.php'>
-            <button type='submit' id='buttom' class='btn btn-primary'>Intente de nuevo</button>
-            </form>
-            <br>
-            <form action='index.php'>
-        <button type='submit' id='buttom' class='btn btn-warning'>Salir</button>
-        </form>";
-                }
-
-            }
+function back_links(): void {
+    echo "<form action='regis.php' class='mt-2'><button type='submit' class='btn btn-primary'>Intente de nuevo</button></form><br><form action='index.php'><button type='submit' class='btn btn-warning'>Salir</button></form>";
+}
 ?>
-
-</div>
-        </div>
-        </div>
-        <div class="sticky-bottom">
-                <a class="img-fluid" href="soport.php">
-                <img src="contact2.png" alt="Soporte" width="100" height="100">
-              </a>
-                </div>
-</div>
-    </body>
-</html>

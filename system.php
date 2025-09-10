@@ -1,543 +1,143 @@
-<!-- ANGELO POLGROSSI | 04124856320 -->
-<!DOCTYPE html>
+<?php
+// Refactored controller style logic for searching operations (system.php)
+require_once __DIR__ . '/src/bootstrap.php';
+require_once __DIR__ . '/src/Repositories.php';
+
+$input = trim($_REQUEST['input'] ?? '');
+$inputYear = trim($_REQUEST['input2'] ?? '');
+$year = valid_year_or_null($inputYear);
+
+if ($input === '') {
+  redirect('index.php');
+}
+
+$db = db();
+$lawRepo = new LawyerRepository($db);
+$opsRepo = new OperationsRepository($db);
+
+// Determine lawyer record (prefer exact CodClie equality, else ID3)
+// Attempt direct (pattern) matches; gather potential multiples
+$primaryMatch = $lawRepo->findByCedula($input);
+if (!$primaryMatch) {
+  $primaryMatch = $lawRepo->findById3($input);
+}
+// Always search broader to allow user disambiguation if more than one
+$candidates = $lawRepo->findByCedulaOrId3Like($input);
+// If we have an exact-like match and more than one candidate, we'll present selection.
+$multiple = count($candidates) > 1;
+$lawyer = null;
+
+// If user selected a specific CodClie via query param choose that.
+$selected = $_GET['cod'] ?? null;
+if ($selected) {
+  foreach ($candidates as $c) {
+    if (isset($c['CodClie']) && (string)$c['CodClie'] === (string)$selected) { $lawyer = $c; break; }
+  }
+}
+if (!$lawyer) {
+  $lawyer = $primaryMatch ?: ($multiple ? null : ($candidates[0] ?? null));
+}
+
+$insc = null; $solv = null; $operations = []; $hasHistoric = false; $hasAnyOtherYear = false; $notFound = false;
+if ($lawyer) {
+  $insc = $lawRepo->getInscriptionData($lawyer['CodClie']);
+  $solv = $lawRepo->getSolvency($lawyer['CodClie']);
+  $operations = $opsRepo->operationsByClient($input, $year);
+  $hasHistoric = $opsRepo->anyOperationHistoric($input);
+  if ($year !== null && !$operations) {
+    // Check if there are operations in other years
+    $hasAnyOtherYear = $opsRepo->anyOperationHistoric($input);
+  }
+} else {
+  $notFound = true;
+}
+
+?><!DOCTYPE html>
 <html lang="es">
-<html>
-    <head>
-        <meta charset="UTF-8">
-        <meta http-equiv="X-UA-Compatible" content="ie=edge">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Verifica las operaciones</title> 
-        <link rel="shortcut icon" href="favicon.png">
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-Zenh87qX5JnK2Jl0vWa8Ck2rdkQ2Bzep5IDxbcnCeuOxjzrPF/et3URy9Bv1WTRi" crossorigin="anonymous">
-    </head>
-    <body>
-      <div
-      style="
-      background: url('piscina.jpg') no-repeat center center fixed;
-      background-size: cover;
-      ">
-            <div class="container">
-                <div class="row min-vh-100 justify-content-center align-items-center">
-                    <div class="col-auto p-5">
-            <?php
-            $input = $_REQUEST["input"];
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Verifica las operaciones</title>
+  <link rel="shortcut icon" href="favicon.png">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+</head>
+<body>
+<div style="background: url('piscina.jpg') no-repeat center center fixed;background-size: cover;">
+  <div class="container">
+    <div class="row min-vh-100 justify-content-center align-items-center">
+      <div class="col-auto p-5">
+        <?php if ($notFound): ?>
+          <div class="alert alert-danger" role="alert">Abogado no inscrito o identificación errónea, intente de nuevo</div>
+          <br>
+          <form action="search.php"><input type="submit" class="btn btn-success w-100" value="Realizar otra búsqueda"></form>
+          <br>
+          <form action="index.php"><button type="submit" class="btn btn-warning">Salir</button></form>
+                <?php elseif ($multiple && !$lawyer): ?>
+                  <div class="alert alert-info" role="alert">Se encontraron múltiples coincidencias, seleccione el abogado:</div>
+                  <ul class="list-group mb-3">
+                    <?php foreach ($candidates as $cand): ?>
+                      <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span><?= h($cand['CodClie'] ?? '') ?> | <?= h($cand['Clase'] ?? '') ?> | <?= h($cand['Descrip'] ?? '') ?></span>
+                        <a class="btn btn-sm btn-primary" href="system.php?input=<?= h(urlencode($input)) ?>&cod=<?= h(urlencode($cand['CodClie'] ?? '')) ?>">Ver</a>
+                      </li>
+                    <?php endforeach; ?>
+                  </ul>
+                  <a href="search.php" class="btn btn-success">Nueva búsqueda</a>
+                  <form class="mt-2" action="index.php"><button type="submit" class="btn btn-warning">Salir</button></form>
+        <?php else: ?>
+          <p class="h1 text-light">Abogado inscrito!</p><br>
+          <?php if ($solv): ?>
+            <p class="text-light">Solvente hasta: <?= h($solv['hasta'] ?? '') ?></p><br>
+          <?php else: ?>
+            <p class="text-light">Solvencia no registrada</p><br>
+          <?php endif; ?>
+          <p class="text-light">CI: <?= h($lawyer['CodClie'] ?? '') ?></p><br>
+          <p class="text-light">Inpre: <?= h($lawyer['Clase'] ?? '') ?></p><br>
+          <?php if ($insc): ?>
+            <p class="text-light">Fecha de Inscripción: <?= h($insc['Fecha'] ?? '') ?></p><br>
+            <p class="text-light">Número de Inscripción: <?= h($insc['Numero'] ?? '') ?></p><br>
+            <p class="text-light">Folio: <?= h($insc['Folio'] ?? '') ?></p><br>
+          <?php endif; ?>
+          <p class="text-light"><?= h($lawyer['Descrip'] ?? '') ?></p><br>
+          <?php if ($solv && !empty($solv['CarnetNum2'])): ?>
+            <p class="text-light">CarnetNum: <?= h($solv['CarnetNum2']) ?></p><br>
+          <?php else: ?>
+            <p class="text-light">No posee carnet de seguridad</p><br>
+          <?php endif; ?>
 
-            $input2 = $_REQUEST["input2"];
+          <?php if ($year !== null): ?>
+            <p class="h2 text-light">Operaciones en el año <?= h($year) ?>:</p><br>
+          <?php else: ?>
+            <p class="h2 text-light">Operaciones recientes:</p><br>
+          <?php endif; ?>
 
-            if ($input == "") {
-              header("Location: index.php");
-    
-              exit();
-            } else {
-            
-              if ($input2 != "") {
-                $consulttotal = "SELECT * FROM SAFACT where CodClie like '%$input%' OR ID3 like '%$input%'";
-                $consult= "SELECT * FROM SAFACT where CodClie like '%$input%' and FechaE like '%$input2%' OR ID3 like '%$input%' and FechaE like '%$input2%'
-                ORDER BY FechaE;";
-                $consultnew= "SELECT * FROM SAFACT where CodClie like '%$input%' and FechaE like '%2023%' OR ID3 like '%$input%' and FechaE like '%2023%'
-                OR CodClie like '%$input%' and FechaE like '%2021%' OR ID3 like '%$input%' and FechaE like '%2021%'
-                OR CodClie like '%$input%' and FechaE like '%2022%' OR ID3 like '%$input%' and FechaE like '%2023%'
-                OR CodClie like '%$input%' and FechaE like '%2022%' OR ID3 like '%$input%' and FechaE like '%2022%'
-                OR CodClie like '%$input%' and FechaE like '%2020%' OR ID3 like '%$input%' and FechaE like '%2020%'
-                OR CodClie like '%$input%' and FechaE like '%2019%' OR ID3 like '%$input%' and FechaE like '%2019%'
-                OR CodClie like '%$input%' and FechaE like '%2018%' OR ID3 like '%$input%' and FechaE like '%2018%'
-                OR CodClie like '%$input%' and FechaE like '%2017%' OR ID3 like '%$input%' and FechaE like '%2017%'
-                OR CodClie like '%$input%' and FechaE like '%2016%' OR ID3 like '%$input%' and FechaE like '%2016%'
-                OR CodClie like '%$input%' and FechaE like '%2015%' OR ID3 like '%$input%' and FechaE like '%2015%'
-                OR CodClie like '%$input%' and FechaE like '%2014%' OR ID3 like '%$input%' and FechaE like '%2014%'
-                OR CodClie like '%$input%' and FechaE like '%2013%' OR ID3 like '%$input%' and FechaE like '%2013%'
-                OR CodClie like '%$input%' and FechaE like '%2012%' OR ID3 like '%$input%' and FechaE like '%2012%'
-                OR CodClie like '%$input%' and FechaE like '%2011%' OR ID3 like '%$input%' and FechaE like '%2011%'
-                OR CodClie like '%$input%' and FechaE like '%2010%' OR ID3 like '%$input%' and FechaE like '%2010%'
-                OR CodClie like '%$input%' and FechaE like '%2009%' OR ID3 like '%$input%' and FechaE like '%2009%'
-                OR CodClie like '%$input%' and FechaE like '%2008%' OR ID3 like '%$input%' and FechaE like '%2008%'
-                OR CodClie like '%$input%' and FechaE like '%2007%' OR ID3 like '%$input%' and FechaE like '%2007%'
-                OR CodClie like '%$input%' and FechaE like '%2006%' OR ID3 like '%$input%' and FechaE like '%2006%'
-                OR CodClie like '%$input%' and FechaE like '%2005%' OR ID3 like '%$input%' and FechaE like '%2005%'
-                OR CodClie like '%$input%' and FechaE like '%2004%' OR ID3 like '%$input%' and FechaE like '%2004%'
-                OR CodClie like '%$input%' and FechaE like '%2003%' OR ID3 like '%$input%' and FechaE like '%2003%'
-                OR CodClie like '%$input%' and FechaE like '%2002%' OR ID3 like '%$input%' and FechaE like '%2002%'
-                OR CodClie like '%$input%' and FechaE like '%2001%' OR ID3 like '%$input%' and FechaE like '%2001%'
-                OR CodClie like '%$input%' and FechaE like '%2000%' OR ID3 like '%$input%' and FechaE like '%2000%'
-                ORDER BY FechaE;";
-                $consultnew2= "SELECT * FROM SAACXC where CodClie like '%$input%' and FechaE like '%2023%'
-                OR CodClie like '%$input%' and FechaE like '%2024%'
-                OR CodClie like '%$input%' and FechaE like '%2022%'
-                OR CodClie like '%$input%' and FechaE like '%2021%'
-                OR CodClie like '%$input%' and FechaE like '%2020%' 
-                OR CodClie like '%$input%' and FechaE like '%2019%' 
-                OR CodClie like '%$input%' and FechaE like '%2018%' 
-                OR CodClie like '%$input%' and FechaE like '%2017%' 
-                OR CodClie like '%$input%' and FechaE like '%2016%' 
-                OR CodClie like '%$input%' and FechaE like '%2015%' 
-                OR CodClie like '%$input%' and FechaE like '%2014%' 
-                OR CodClie like '%$input%' and FechaE like '%2013%' 
-                OR CodClie like '%$input%' and FechaE like '%2012%'
-                OR CodClie like '%$input%' and FechaE like '%2011%' 
-                OR CodClie like '%$input%' and FechaE like '%2010%' 
-                OR CodClie like '%$input%' and FechaE like '%2009%' 
-                OR CodClie like '%$input%' and FechaE like '%2008%' 
-                OR CodClie like '%$input%' and FechaE like '%2007%' 
-                OR CodClie like '%$input%' and FechaE like '%2006%' 
-                OR CodClie like '%$input%' and FechaE like '%2005%' 
-                OR CodClie like '%$input%' and FechaE like '%2004%' 
-                OR CodClie like '%$input%' and FechaE like '%2003%' 
-                OR CodClie like '%$input%' and FechaE like '%2002%' 
-                OR CodClie like '%$input%' and FechaE like '%2001%' 
-                OR CodClie like '%$input%' and FechaE like '%2000%' 
-                ORDER BY FechaE;";
+          <?php if ($operations): ?>
+            <?php foreach ($operations as $op): ?>
+              <p class="text-light"><?= h($op['FechaE']) ?> <?= h($op['NumeroD']) ?> <?= h($op['OrdenC']) ?> <?= h(trim(($op['Notas1'] ?? '') . ' ' . ($op['Notas2'] ?? '') . ' ' . ($op['Notas3'] ?? '') . ' ' . ($op['Notas4'] ?? '') . ' ' . ($op['Notas5'] ?? '') . ' ' . ($op['Notas6'] ?? '') . ' ' . ($op['Notas7'] ?? ''))) ?></p>
+            <?php endforeach; ?>
+          <?php else: ?>
+            <p class="text-light">Sin transacciones <?= $year !== null ? 'en el año ' . h($year) : 'recientes' ?>...</p>
+          <?php endif; ?>
 
-                require './conn.php'; $conn = DataConnect();
-            
-                $stmtnew2 = $conn->prepare($consultnew2);
-                $stmtnew2->execute();
-                $rownew2= $stmtnew2->fetchAll(PDO::FETCH_ASSOC)[0];
-                $stmtnew2->closeCursor();
-                
-                $nullornotnew2 = is_null($rownew2);
-                $consultclie= "SELECT * FROM SACLIE where CodClie like '%$input%'";
-                $consultclie2= "SELECT * FROM SACLIE where ID3 like '%$input%'";
-    
-                $stmtclie = $conn->prepare($consultclie);
-                $stmtclie->execute();
-                $rowclie = $stmtclie->fetchAll(PDO::FETCH_ASSOC)[0];
-                $stmtclie->closeCursor();
-
-                $stmtclie2 = $conn->prepare($consultclie2);
-                $stmtclie2->Execute();
-                $rowclie2 = $stmtclie2->fetchAll(PDO::FETCH_ASSOC)[0];
-                $stmtclie2->closeCursor();
-
-                $nullornotclie = is_null($rowclie);
-                $nullornotclie2 = is_null($rowclie2);
-    
-                if ($nullornotclie == false or $nullornotclie2 == false ) {
-                  echo " <p class='h1 text-light'>Abogado inscrito!</p><br>";
-                  if ($nullornotclie == false && $nullornotclie2 == true) {
-                    $consultSOLV = "SELECT * FROM SOLV WHERE CodClie = '$rowclie[CodClie]' and Status = 1";
-                    $stmtSOLV = $conn->prepare($consultSOLV);
-                    $stmtSOLV->execute();
-                    $rowSOLV = $stmtSOLV->fetchAll(PDO::FETCH_ASSOC)[0];
-                    $stmtSOLV->closeCursor();
-                    $nullornotSOLV = is_null($rowSOLV);
-
-                    $consultIns = "SELECT * FROM SACLIE_08 WHERE CodClie = '$rowclie[CodClie]'";
-                    $stmtIns = $conn->prepare($consultIns);
-                    $stmtIns->execute();
-                    $rowIns = $stmtIns->fetchAll(PDO::FETCH_ASSOC)[0];
-                    $stmtIns->closeCursor();
-
-                    if ($nullornotSOLV == false) 
-                    {
-                        echo "<p class='text-light'>Solvente hasta: $rowSOLV[hasta]</p><br>";
-                    } else {
-                      echo "<p class='text-light'>Solvencia no registrada</p><br>";
-                    }
-                    echo "<p class='text-light'>CI: $rowclie[CodClie]</p><br>";
-                    echo "<p class='text-light'>Inpre: $rowclie[Clase]</p><br>";
-                    echo "<p class='text-light'>Fecha de Inscripcion: $rowIns[Fecha]</p><br>";
-                    echo "<p class='text-light'>Numero de Inscripcion: $rowIns[Numero]</p><br>";
-                    echo "<p class='text-light'>Folio: $rowIns[Folio]</p><br>";
-                    echo "<p class='text-light'>$rowclie[Descrip]</p><br>";
-                    if ($nullornotSOLV == false) 
-                    {
-                    echo "<p class='text-light'>CarnetNum: $rowSOLV[CarnetNum2]</p><br>";
-                    }
-                    else{
-                      echo "<p class='text-light'>No posee carnet de seguridad</p><br>";
-                    }
-                  } else {
-                    $consultSOLV = "SELECT * FROM SOLV WHERE CodClie = '$rowclie[CodClie]' and Status = 1";
-                    $stmtSOLV = $conn->prepare($consultSOLV);
-                    $stmtSOLV->execute();
-                    $rowSOLV = $stmtSOLV->fetchAll(PDO::FETCH_ASSOC)[0];
-                    $stmtSOLV->closeCursor();
-                    $nullornotSOLV = is_null($rowSOLV);
-
-                    $consultIns = "SELECT * FROM SACLIE_08 WHERE CodClie = '$rowclie[CodClie]'";
-                    $stmtIns = $conn->prepare($consultIns);
-                    $stmtIns->execute();
-                    $rowIns = $stmtIns->fetchAll(PDO::FETCH_ASSOC)[0];
-                    $stmtIns->closeCursor();
-
-                    if ($nullornotSOLV == false) 
-                    {
-                        echo "<p class='text-light'>Solvente hasta: $rowSOLV[hasta]</p><br>";
-                    } else {
-                      echo "<p class='text-light'>Solvencia no registrada</p><br>";
-                    }
-                    echo "<p class='text-light'>CI: $rowclie[CodClie]</p><br>";
-                    echo "<p class='text-light'>Inpre: $rowclie[Clase]</p><br>";
-                    echo "<p class='text-light'>Fecha de Inscripcion: $rowIns[Fecha]</p><br>";
-                    echo "<p class='text-light'>Numero de Inscripcion: $rowIns[Numero]</p><br>";
-                    echo "<p class='text-light'>Folio: $rowIns[Folio]</p><br>";
-                    echo "<p class='text-light'>$rowclie[Descrip]</p><br>";
-                    if ($nullornotSOLV == false) 
-                    {
-                    echo "<p class='text-light'>CarnetNum: $rowSOLV[CarnetNum2]</p><br>";
-                    }
-                    else{
-                      echo "<p class='text-light'>No posee carnet de seguridad</p><br>";
-                    }
-                  }
-    
-                  $stmt3 = $conn->prepare($consult);
-                  $stmt3->execute();
-                  $row3 = $stmt3->fetchAll(PDO::FETCH_ASSOC)[0];
-                  $stmt3->closeCursor();
-      
-                  $nullornot3 = is_null($row3);
-      
-                  $stmtcodclie = $conn->prepare($consult);
-                  $stmtcodclie->execute();
-    
-                if ($nullornot3 == false)
-                {
-                    echo " <p class='h2 text-light'>Operaciones en el año $input2: </p><br>";
-                    while( $row = $stmtcodclie->fetchAll(PDO::FETCH_ASSOC)[0] ) {
-                      echo "<p class='text-light'>" .$row['FechaE'] . " " .$row['NumeroD']. " " .$row['OrdenC']. " ". $row['Notas1']. " " 
-                      . $row['Notas2'] . " " . $row['Notas3'] . " " . $row['Notas4'] . " " . $row['Notas5']
-                      . $row['Notas6'] . " " . $row['Notas7'] . "</p>";
-                    }
-                }
-    
-                $stmt2 = $conn->prepare($consult);
-                $stmt2->execute();
-                $row2 = $stmt2->fetchAll(PDO::FETCH_ASSOC)[0];
-                $stmt2->closeCursor();
-
-                $nullornot2 = is_null($row2);
-    
-                if ($nullornot2 == TRUE) {
-                  if ($nullornotclie == false && $nullornotclie2 == false ){
-                  echo " <p class='text-light'>Sin transacciones en el año $input2...</p>";
-                  }
-                }
-    
-                $stmtnew = $conn->prepare($consultnew);
-                $stmtnew->execute();
-                $rownew = $stmtnew->fetchAll(PDO::FETCH_ASSOC)[0];
-                $stmtnew->closeCursor();
-
-                $nullornotnew = is_null($rownew);
-        
-                if ($nullornotnew == true) {
-                  if($nullornotnew2 == false){
-                    echo "<br>
-                  <div class='btn-group'>
-      <a href='all.php?ci=$input&ip=0' class='btn btn-success active' aria-current='page'>Todas las operaciones</a>
-      <a href='search.php' class='btn btn-success'>Realizar otra busqueda</a>
-      <br>
+          <br>
+          <div class="btn-group">
+            <?php if ($hasHistoric): ?>
+              <a href="all.php?ci=<?= h(urlencode($input)) ?>&ip=0" class="btn btn-success">Todas las operaciones</a>
+            <?php endif; ?>
+            <a href="search.php" class="btn btn-success">Realizar otra búsqueda</a>
+          </div>
+          <br><br>
+          <form action="index.php"><button type="submit" class="btn btn-warning">Salir</button></form>
+        <?php endif; ?>
+      </div>
     </div>
-    <br>
-                  <br>
-                  <form action='index.php'>
-                  <div class='btn-group'>
-            <button type='submit' id='buttom' class='btn btn-warning'>Salir</button>
-            </form>";
-                  }else{
-                echo "<br>
-                <form action='search.php'>
-                  <input type='submit' class='btn btn-success w-100' value='Realizar otra busqueda'>
-                </form>
-                  <br>
-                  <form action='index.php'>
-                  <div class='btn-group'>
-            <button type='submit' id='buttom' class='btn btn-warning'>Salir</button>
-            </form>";}
-                } else {
-                  echo "<br>
-                  <div class='btn-group'>
-      <a href='all.php?ci=$input&ip=0' class='btn btn-success active' aria-current='page'>Todas las operaciones</a>
-      <a href='search.php' class='btn btn-success'>Realizar otra busqueda</a>
-      <br>
-    </div>
-    <br>
-                  <br>
-                  <form action='index.php'>
-                  <div class='btn-group'>
-            <button type='submit' id='buttom' class='btn btn-warning'>Salir</button>
-            </form>";
-                }
-
-              } else {
-                echo "<div class='alert alert-danger' role='alert'>
-              Abogado no inscrito o identifacion erronea, intente de nuevo
-            </div>";
-
-            echo "<br>
-            <form action='search.php'>
-              <input type='submit' class='btn btn-success w-100' value='Realizar otra busqueda'>
-            </form>
-              <br>
-              <form action='index.php'>
-                  <div class='btn-group'>
-            <button type='submit' id='buttom' class='btn btn-warning'>Salir</button>
-            </form>";
-              }
-    
-              } else {
-
-            $consulttotal = "SELECT * FROM SAFACT where CodClie like '%$input%' OR ID3 like '%$input%'";
-            $consult= "SELECT * FROM SAFACT where CodClie like '%$input%' and FechaE like '%2025%' OR ID3 like '%$input%' and FechaE like '%2025%'
-            ORDER BY FechaE;";
-            $consultnew= "SELECT * FROM SAFACT where CodClie like '%$input%' and FechaE like '%2021%' OR ID3 like '%$input%' and FechaE like '%2021%'
-            OR CodClie like '%$input%' and FechaE like '%2023%' OR ID3 like '%$input%' and FechaE like '%2025%'
-            OR CodClie like '%$input%' and FechaE like '%2023%' OR ID3 like '%$input%' and FechaE like '%2023%'
-            OR CodClie like '%$input%' and FechaE like '%2022%' OR ID3 like '%$input%' and FechaE like '%2022%'
-            OR CodClie like '%$input%' and FechaE like '%2020%' OR ID3 like '%$input%' and FechaE like '%2020%'
-            OR CodClie like '%$input%' and FechaE like '%2019%' OR ID3 like '%$input%' and FechaE like '%2019%'
-            OR CodClie like '%$input%' and FechaE like '%2018%' OR ID3 like '%$input%' and FechaE like '%2018%'
-            OR CodClie like '%$input%' and FechaE like '%2017%' OR ID3 like '%$input%' and FechaE like '%2017%'
-            OR CodClie like '%$input%' and FechaE like '%2016%' OR ID3 like '%$input%' and FechaE like '%2016%'
-            OR CodClie like '%$input%' and FechaE like '%2015%' OR ID3 like '%$input%' and FechaE like '%2015%'
-            OR CodClie like '%$input%' and FechaE like '%2014%' OR ID3 like '%$input%' and FechaE like '%2014%'
-            OR CodClie like '%$input%' and FechaE like '%2013%' OR ID3 like '%$input%' and FechaE like '%2013%'
-            OR CodClie like '%$input%' and FechaE like '%2012%' OR ID3 like '%$input%' and FechaE like '%2012%'
-            OR CodClie like '%$input%' and FechaE like '%2011%' OR ID3 like '%$input%' and FechaE like '%2011%'
-            OR CodClie like '%$input%' and FechaE like '%2010%' OR ID3 like '%$input%' and FechaE like '%2010%'
-            OR CodClie like '%$input%' and FechaE like '%2009%' OR ID3 like '%$input%' and FechaE like '%2009%'
-            OR CodClie like '%$input%' and FechaE like '%2008%' OR ID3 like '%$input%' and FechaE like '%2008%'
-            OR CodClie like '%$input%' and FechaE like '%2007%' OR ID3 like '%$input%' and FechaE like '%2007%'
-            OR CodClie like '%$input%' and FechaE like '%2006%' OR ID3 like '%$input%' and FechaE like '%2006%'
-            OR CodClie like '%$input%' and FechaE like '%2005%' OR ID3 like '%$input%' and FechaE like '%2005%'
-            OR CodClie like '%$input%' and FechaE like '%2004%' OR ID3 like '%$input%' and FechaE like '%2004%'
-            OR CodClie like '%$input%' and FechaE like '%2003%' OR ID3 like '%$input%' and FechaE like '%2003%'
-            OR CodClie like '%$input%' and FechaE like '%2002%' OR ID3 like '%$input%' and FechaE like '%2002%'
-            OR CodClie like '%$input%' and FechaE like '%2001%' OR ID3 like '%$input%' and FechaE like '%2001%'
-            OR CodClie like '%$input%' and FechaE like '%2000%' OR ID3 like '%$input%' and FechaE like '%2000%'
-            ORDER BY FechaE;";
-            $consultnew2= "SELECT * FROM SAACXC where CodClie like '%$input%' and FechaE like '%2022%'
-            OR CodClie like '%$input%' and FechaE like '%2024%'
-            OR CodClie like '%$input%' and FechaE like '%2023%'
-            OR CodClie like '%$input%' and FechaE like '%2021%'
-            OR CodClie like '%$input%' and FechaE like '%2020%' 
-            OR CodClie like '%$input%' and FechaE like '%2019%' 
-            OR CodClie like '%$input%' and FechaE like '%2018%' 
-            OR CodClie like '%$input%' and FechaE like '%2017%' 
-            OR CodClie like '%$input%' and FechaE like '%2016%' 
-            OR CodClie like '%$input%' and FechaE like '%2015%' 
-            OR CodClie like '%$input%' and FechaE like '%2014%' 
-            OR CodClie like '%$input%' and FechaE like '%2013%' 
-            OR CodClie like '%$input%' and FechaE like '%2012%'
-            OR CodClie like '%$input%' and FechaE like '%2011%' 
-            OR CodClie like '%$input%' and FechaE like '%2010%' 
-            OR CodClie like '%$input%' and FechaE like '%2009%' 
-            OR CodClie like '%$input%' and FechaE like '%2008%' 
-            OR CodClie like '%$input%' and FechaE like '%2007%' 
-            OR CodClie like '%$input%' and FechaE like '%2006%' 
-            OR CodClie like '%$input%' and FechaE like '%2005%' 
-            OR CodClie like '%$input%' and FechaE like '%2004%' 
-            OR CodClie like '%$input%' and FechaE like '%2003%' 
-            OR CodClie like '%$input%' and FechaE like '%2002%' 
-            OR CodClie like '%$input%' and FechaE like '%2001%' 
-            OR CodClie like '%$input%' and FechaE like '%2000%' 
-            ORDER BY FechaE;";
-            
-            require './conn.php'; $conn = DataConnect();
-            
-            $stmtnew2 = $conn->prepare($consultnew2);
-            $stmtnew2->execute();
-            $rownew2= $stmtnew2->fetchAll(PDO::FETCH_ASSOC)[0];
-            $stmtnew2->closeCursor();
-            
-            $nullornotnew2 = is_null($rownew2);
-            $consultclie= "SELECT * FROM SACLIE where CodClie like '%$input%'";
-            $consultclie2= "SELECT * FROM SACLIE where ID3 like '%$input%'";
-
-            $stmtclie = $conn->prepare($consultclie);
-            $stmtclie->execute();
-            $rowclie = $stmtclie->fetchAll(PDO::FETCH_ASSOC)[0];
-            $stmtclie->closeCursor();
-
-            $stmtclie2 = $conn->prepare($consultclie2);
-            $stmtclie2->Execute();
-            $rowclie2 = $stmtclie2->fetchAll(PDO::FETCH_ASSOC)[0];
-            $stmtclie2->closeCursor();
-
-            $nullornotclie = is_null($rowclie);
-            $nullornotclie2 = is_null($rowclie2);
-
-            if ($nullornotclie == false or $nullornotclie2 == false ) {
-              echo " <p class='h1 text-light'>Abogado inscrito!</p><br>";
-              if ($nullornotclie == false && $nullornotclie2 == true) {
-                $consultSOLV = "SELECT * FROM SOLV WHERE CodClie = '$rowclie[CodClie]' and Status = 1";
-                $stmtSOLV = $conn->prepare($consultSOLV);
-                $stmtSOLV->execute();
-                $rowSOLV = $stmtSOLV->fetchAll(PDO::FETCH_ASSOC)[0];
-                $stmtSOLV->closeCursor();
-                $nullornotSOLV = is_null($rowSOLV);
-
-                $consultIns = "SELECT * FROM SACLIE_08 WHERE CodClie = '$rowclie[CodClie]'";
-                $stmtIns = $conn->prepare($consultIns);
-                $stmtIns->execute();
-                $rowIns = $stmtIns->fetchAll(PDO::FETCH_ASSOC)[0];
-                $stmtIns->closeCursor();
-
-                if ($nullornotSOLV == false) 
-                {
-                    echo "<p class='text-light'>Solvente hasta: $rowSOLV[hasta]</p><br>";
-                } else {
-                  echo "<p class='text-light'>Solvencia no registrada</p><br>";
-                }
-                echo "<p class='text-light'>CI: $rowclie[CodClie]</p><br>";
-                echo "<p class='text-light'>Inpre: $rowclie[Clase]</p><br>";
-                echo "<p class='text-light'>Fecha de Inscripcion: $rowIns[Fecha]</p><br>";
-                echo "<p class='text-light'>Numero de Inscripcion: $rowIns[Numero]</p><br>";
-                echo "<p class='text-light'>Folio: $rowIns[Folio]</p><br>";
-                echo "<p class='text-light'>$rowclie[Descrip]</p><br>";
-                if ($nullornotSOLV == false) 
-                {
-                echo "<p class='text-light'>CarnetNum: $rowSOLV[CarnetNum2]</p><br>";
-                }
-                else{
-                  echo "<p class='text-light'>No posee carnet de seguridad</p><br>";
-                }
-              } else {
-                $consultSOLV = "SELECT * FROM SOLV WHERE CodClie = '$rowclie[CodClie]' and Status = 1";
-                $stmtSOLV = $conn->prepare($consultSOLV);
-                $stmtSOLV->execute();
-                $rowSOLV = $stmtSOLV->fetchAll(PDO::FETCH_ASSOC)[0];
-                $stmtSOLV->closeCursor();
-                $nullornotSOLV = is_null($rowSOLV);
-
-                $consultIns = "SELECT * FROM SACLIE_08 WHERE CodClie = '$rowclie[CodClie]'";
-                $stmtIns = $conn->prepare($consultIns);
-                $stmtIns->execute();
-                $rowIns = $stmtIns->fetchAll(PDO::FETCH_ASSOC)[0];
-                $stmtIns->closeCursor();
-
-                if ($nullornotSOLV == false) 
-                {
-                    echo "<p class='text-light'>Solvente hasta: $rowSOLV[hasta]</p><br>";
-                } else {
-                  echo "<p class='text-light'>Solvencia no registrada</p><br>";
-                }
-                echo "<p class='text-light'>CI: $rowclie[CodClie]</p><br>";
-                echo "<p class='text-light'>Inpre: $rowclie[Clase]</p><br>";
-                echo "<p class='text-light'>Fecha de Inscripcion: $rowIns[Fecha]</p><br>";
-                echo "<p class='text-light'>Numero de Inscripcion: $rowIns[Numero]</p><br>";
-                echo "<p class='text-light'>Folio: $rowIns[Folio]</p><br>";
-                echo "<p class='text-light'>$rowclie[Descrip]</p><br>";
-                if ($nullornotSOLV == false) 
-                {
-                echo "<p class='text-light'>CarnetNum: $rowSOLV[CarnetNum2]</p><br>";
-                }
-                else{
-                  echo "<p class='text-light'>No posee carnet de seguridad</p><br>";
-                }
-              }
-
-            $stmt3 = $conn->prepare($consult);
-            $stmt3->execute();
-            $row3 = $stmt3->fetchAll(PDO::FETCH_ASSOC);
-            $stmt3->closeCursor();
-
-            $nullornot3 = is_null($row3);
-
-            $stmtcodclie = $conn->prepare($consult);
-            $stmtcodclie->execute();
-            $rows = $stmtcodclie->fetchAll(PDO::FETCH_ASSOC);
-            $stmtcodclie->closeCursor();
-
-            if ($nullornot3 == false)
-            {
-                echo " <p class='h2 text-light'>Operaciones recientes: </p><br>";
-                foreach($rows as $row) {
-                  echo "<p class='text-light'>".$row['FechaE'] . " " .$row['NumeroD']. " " .$row['OrdenC']. " ". $row['Notas1']. " " 
-                  . $row['Notas2'] . " " . $row['Notas3'] . " " . $row['Notas4'] . " " . $row['Notas5']
-                  . $row['Notas6'] . " " . $row['Notas7'] . "</p>";
-                }
-            }
-
-            $stmt2 = $conn->prepare($consult);
-            $stmt2->execute();
-            $row2 = $stmt2->fetchAll(PDO::FETCH_ASSOC);
-            $stmt2->closeCursor();
-
-            $nullornot2 = is_null($row2);
-
-            if ($nullornot2 == TRUE && $nullornotclie == false) {
-              if ($nullornotclie == false && $nullornotclie2 == false)
-              echo " <p class='text-light'>Sin transacciones recientes...</p>";
-            }
-
-            $stmtnew = $conn->prepare($consultnew);
-            $stmtnew->execute();
-            $rownew = $stmtnew->fetchAll(PDO::FETCH_ASSOC);
-            $stmtnew->closeCursor();
-
-            $nullornotnew = is_null($rownew);
-
-            if ($nullornotnew == true) {
-
-              if($nullornotnew2 == false){
-                echo "<br>
-              <div class='btn-group'>
-  <a href='all.php?ci=$input&ip=0' class='btn btn-success active' aria-current='page'>Todas las operaciones</a>
-  <a href='search.php' class='btn btn-success'>Realizar otra busqueda</a>
-  <br>
-</div>
-<br>
-              <br>
-              <form action='index.php'>
-              <div class='btn-group'>
-        <button type='submit' id='buttom' class='btn btn-warning'>Salir</button>
-        </form>";
-              }else{
-            echo "<br>
-            <form action='search.php'>
-              <input type='submit' class='btn btn-success w-100' value='Realizar otra busqueda'>
-            </form>
-              <br>
-              <form action='index.php'>
-              <div class='btn-group'>
-        <button type='submit' id='buttom' class='btn btn-warning'>Salir</button>
-
-        </form>";}
-            } else {
-              echo "<br>
-              <div class='btn-group'>
-  <a href='all.php?ci=$input&ip=0' class='btn btn-success active' aria-current='page'>Todas las operaciones</a>
-  <a href='search.php' class='btn btn-success'>Realizar otra busqueda</a>
-  <br>
-</div>
-<br>
-              <br>
-              <form action='index.php'>
-            <button type='submit' id='buttom' class='btn btn-warning'>Salir</button>
-            </form>";
-            }
-
-          } else {
-            echo "<div class='alert alert-danger' role='alert'>
-              Abogado no inscrito o identifacion erronea, intente de nuevo
-            </div>";
-
-            echo "<br>
-            <form action='search.php'>
-              <input type='submit' class='btn btn-success w-100' value='Realizar otra busqueda'>
-            </form>
-              <br>
-              <form action='index.php'>
-                  <div class='btn-group'>
-            <button type='submit' id='buttom' class='btn btn-warning'>Salir</button>
-            </form>";
-          }
-
-          }
-            }
-               
-            ?>
-            
-            </div>
-        </div>
-        </div>
-        <div class="sticky-bottom">
-                <a class="img-fluid" href="soport.php">
-                <img src="contact2.png" alt="Soporte" width="100" height="100">
-              </a>
-                </div>
+  </div>
+  <div class="sticky-bottom">
+    <a class="img-fluid" href="soport.php">
+      <img src="contact2.png" alt="Soporte" width="100" height="100">
+    </a>
+  </div>
 </div>
 </body>
 </html>

@@ -1,102 +1,31 @@
-<!-- ANGELO POLGROSSI | 04124856320 -->
 <?php
-
-session_start();
-
-if (empty($_SESSION["nameuser"])) {
-    
-    header("Location: index.php");
-    
-    exit();
-}
-   
-    $_SESSION["delete"] = $_SESSION["nameuser"];
-
-if (isset($_SESSION['LAST_ACTIVITY']) && (time() - $_SESSION['LAST_ACTIVITY'] > 1600)) {
-    
-    session_unset();     
-    session_destroy();   
-    header("Location: index.php");
-    
-    exit();
-
-}
-$_SESSION['LAST_ACTIVITY'] = time(); 
-
-
+require __DIR__ . '/src/bootstrap.php';
+require __DIR__ . '/src/layout.php';
+require_auth();
+// token to ensure user passed through confirmation flow
+$_SESSION['delete_flow'] = time();
+render_header('Eliminar Usuario', 'domo.jpg');
 ?>
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Eliminar Usuario</title>
-    <link rel="shortcut icon" href="favicon.png">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-Zenh87qX5JnK2Jl0vWa8Ck2rdkQ2Bzep5IDxbcnCeuOxjzrPF/et3URy9Bv1WTRi" crossorigin="anonymous">
-</head>
-<body>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4" crossorigin="anonymous"></script>
-
-    <div style=" background: url('domo.jpg') no-repeat center center fixed;
-      background-size: cover; ">
-      <nav class="navbar fixed-top" style="background-color: rgba(255,255,255,0);">
-  <div class="container-fluid">
-  <a class="navbar-brand"></a>
-    <button class="navbar-toggler" type="button" style="background-color:#FFFFFF;" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNavbar" aria-controls="offcanvasNavbar">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasNavbar" aria-labelledby="offcanvasNavbarLabel">
-      <div class="offcanvas-header">
-        <h5 class="offcanvas-title" id="offcanvasNavbarLabel">Menu</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+<div class="container">
+  <div class="row min-vh-100 justify-content-center align-items-center">
+    <div class="col-lg-6 col-md-8 col-sm-10">
+      <div class="card shadow border-danger">
+        <div class="card-body text-center">
+          <h1 class="h4 mb-4 text-danger">¿Seguro que deseas eliminar tu usuario?</h1>
+          <p class="text-muted">Esta acción es permanente y eliminará tu cuenta de acceso.</p>
+          <form action="delete2.php" method="post" class="d-grid gap-2">
+            <?= csrf_input(); ?>
+            <button class="btn btn-outline-danger" type="submit">Sí, continuar</button>
+          </form>
+          <div class="mt-3">
+            <a href="pageuser.php" class="btn btn-secondary">Cancelar</a>
+          </div>
+        </div>
       </div>
-      <div class="offcanvas-body">
-        <ul class="navbar-nav justify-content-end flex-grow-1 pe-3">
-          <li class="nav-item">
-            <a class="nav-link active" aria-current="page" href="pageuser.php">Inicio</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="recemail.php">Cambiar email</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="recpass.php">Cambiar contraseña</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="datedb.php">Datos de registro en el Colegio de Abogados</a>
-          </li>
-        </ul>
-
+      <div class="mt-4 text-center">
+        <a href="soport.php"><img src="contact2.png" width="80" alt="Soporte"></a>
       </div>
     </div>
   </div>
-</nav>
-            <div class="container">
-                <div class="row min-vh-100 justify-content-center align-items-center">
-                
-                    <div class="col-auto p-5">
-                    <p class='h1 text-light'>Estas seguro de eliminar tu usuario?</p>
-            <br>
-            <form action='delete2.php'>
-              
-        <button type='submit' id='buttom' class='btn btn-outline-danger'>Eliminar</button>
-        
-        </form>
-            <br>
-            <form action='index.php'>
-              <div class='btn-group'>
-              <a href='logout.php' class='btn btn-danger' aria-current='page'>Cerrar sesion</a>
-        <button type='submit' id='buttom' class='btn btn-warning'>Salir</button>
-        </div>
-        </form>
-            </div>
-        </div>
-        </div>
-        <div class="sticky-bottom">
-                <a class="img-fluid" href="soport.php">
-                <img src="contact2.png" alt="Soporte" width="100" height="100">
-              </a>
-                </div>
 </div>
-</body>
-</html>
+<?php render_footer(); ?>

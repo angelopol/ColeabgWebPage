@@ -29,7 +29,8 @@ if (empty($_SESSION["nameuser"])) {
                 <div class="row min-vh-100 justify-content-center align-items-center">
                     <div class="col-auto p-5">
                     <p class='h1 text-light'>Ingresa al Sistema!</p>
-            <form action="login.php" method="post">
+      <form action="login.php" method="post">
+        <?php require_once __DIR__ . '/src/bootstrap.php'; echo csrf_input(); ?>
                 
                 
                 <br>

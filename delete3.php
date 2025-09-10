@@ -1,216 +1,40 @@
-<!-- ANGELO POLGROSSI | 04124856320 -->
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Eliminar Usuario</title>
-    <link rel="shortcut icon" href="favicon.png">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-Zenh87qX5JnK2Jl0vWa8Ck2rdkQ2Bzep5IDxbcnCeuOxjzrPF/et3URy9Bv1WTRi" crossorigin="anonymous">
-</head>
-<body>
-    <div
-    style="
-      background: url('domo.jpg') no-repeat center center fixed;
-      background-size: cover;
-    ">
-            <div class="container">
-                <div class="row vh-100 justify-content-center align-items-center">
-                    <div class="col-auto p-5">
 <?php
+require __DIR__ . '/src/bootstrap.php';
+require __DIR__ . '/src/layout.php';
+require __DIR__ . '/src/Repositories.php';
+require_auth();
+if (empty($_SESSION['delete_flow'])) { redirect('delete.php'); }
 
-use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\SMTP;
-use PHPMailer\PHPMailer\Exception;
+if (!verify_csrf()) { render_header('Token inválido','domo.jpg'); echo alert_box('danger','Token CSRF inválido.'); render_footer(); exit; }
+$contra = $_POST['contra'] ?? '';
+$contra2 = $_POST['contra2'] ?? '';
 
-require 'PHPMailer.php'; // Only file you REALLY need
-require 'Exception.php'; // If you want to debug
-require 'SMTP.php';
+render_header('Eliminar Usuario', 'domo.jpg');
+echo "<div class='container'><div class='row vh-100 justify-content-center align-items-center'><div class='col-lg-6 col-md-8 col-sm-10'><div class='card shadow border-danger'><div class='card-body'>";
 
-                $contra = $_POST["contra"];
-                $contra2 = $_POST["contra2"];
+if ($contra === '' || $contra2 === '') { session_destroy(); redirect('index.php'); }
+if ($contra !== $contra2) { echo alert_box('danger','La contraseña no coincide con su confirmación.'); back(); finish(); }
 
-                $serverName = "sql5111.site4now.net"; 
-$connectionInfo = array( "Database"=>"db_aa07eb_coleabg", "UID"=>"db_aa07eb_coleabg_admin", "PWD"=>"$0p0rt3ca" ,'ReturnDatesAsStrings'=>true);
-require './conn.php'; $conn = sqlsrv_connect(DataConnect()[0], DataConnect()[1]);
+$userRepo = new UserRepository(db());
+$user = $userRepo->findByEmail($_SESSION['nameuser']);
+if (!$user) { session_destroy(); redirect('index.php'); }
 
-                if ($contra2 == "" or $contra == "" ) {
-                    session_start();
-                    session_destroy();
-                    header("Location: index.php");
-    
-              exit();
-                } else {
+// verify password (hash or plain)
+$validPass = false;
+if (isset($user['pass']) && str_starts_with((string)$user['pass'], '$2y$')) {
+    $validPass = password_verify($contra, $user['pass']);
+} else { $validPass = ($contra === $user['pass']); }
+if (!$validPass) { echo alert_box('danger','Contraseña incorrecta.'); back(); finish(); }
 
+if (!$userRepo->deleteByEmail($_SESSION['nameuser'])) { echo alert_box('danger','Error al eliminar el usuario.'); back(); finish(); }
 
-                    if ($contra == $contra2) {
+send_email($_SESSION['nameuser'], 'Cuenta eliminada', '<p>Su cuenta ha sido eliminada.</p>');
 
-                        session_start();
+echo alert_box('success','Su usuario ha sido eliminado exitosamente.');
+echo "<form action='index.php' class='mt-3'><button type='submit' class='btn btn-warning w-100'>Salir</button></form>";
+session_destroy();
+finish();
 
-                        $consultusers = "SELECT * FROM USUARIOS where email like '%$_SESSION[nameuser]%'";
-
-                            $stmtusers = sqlsrv_query( $conn, $consultusers);
-                            $rowclieusers = sqlsrv_fetch_array( $stmtusers, SQLSRV_FETCH_ASSOC);
-
-                        if ($contra == $rowclieusers['pass']) {
-
-                                    $consultcreate= "DELETE FROM USUARIOS
-                                    WHERE email like '%$_SESSION[nameuser]%'";
-                                    
-                                    $stmtcreate = sqlsrv_query( $conn, $consultcreate);
-                                    
-                                    if ($stmtcreate == false) {
-                                        echo "<div class='alert alert-danger' role='alert'>
-                    Ha ocurrido un error, por favor intente de nuevo!
-                </div>";
-                    echo        
-            "<br>
-            <form action='delete.php'>
-            <button type='submit' id='buttom' class='btn btn-primary'>Intente de nuevo</button>
-            
-            </form>
-            <br>
-                                        <form action='ingre.php'>
-                                        <input type='submit' class='btn btn-light' value='Inicio'>
-                                        </form>
-            <br>
-            <form action='index.php'>
-              <div class='btn-group'>
-              <a href='logout.php' class='btn btn-danger' aria-current='page'>Cerrar sesion</a>
-        <button type='submit' id='buttom' class='btn btn-warning'>Salir</button>
-        </div>
-        </form>"
-            ;
-                                    } else {
-
-                                        try {
-                                            $mail = new PHPMailer(true);
-
-                                            if (!filter_var($_SESSION['nameuser'], FILTER_VALIDATE_EMAIL)) {
-                                                throw new Exception('Dirección de correo electrónico no válida.');
-                                              }
-
-                                            //Server settings
-                                            $mail->SMTPDebug = 0;                      //Enable verbose debug output
-                                            $mail->isSMTP();                                            //Send using SMTP
-                                            $mail->Host       = 'smtp.gmail.com';                     //Set the SMTP server to send through
-                                            $mail->SMTPAuth   = true;                                   //Enable SMTP authentication
-                                            $mail->Username   = 'coleabgca@gmail.com';                     //SMTP username
-                                            $mail->Password   = 'nqqirendnyzasbyf';                               //SMTP password
-                                            $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;            //Enable implicit TLS encryption
-                                            $mail->Port       = 465;                                    //TCP port to connect to; use 587 if you have set `SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS`
-
-                                            //Recipients
-                                            $mail->setFrom('coleabgca@gmail.com', 'Colegio de Abogados
-                                            del Estado Carabobo');
-                                            $mail->addAddress("$_SESSION[nameuser]");     //Add a recipient
-                                            //$mail->addAddress('ellen@example.com');               //Name is optional
-                                            //$mail->addReplyTo('info@example.com', 'Information');
-                                            //$mail->addCC('cc@example.com');
-                                            //$mail->addBCC('bcc@example.com');
-
-                                            //Attachments
-                                            //$mail->addAttachment('/var/tmp/file.tar.gz');         //Add attachments
-                                            //$mail->addAttachment('/tmp/image.jpg', 'new.jpg');    //Optional name
-
-                                            //Content
-                                            $mail->isHTML(true); 
-                                            $mail->CharSet = 'UTF-8';                                 //Set email format to HTML
-                                            $mail->Subject = 'Su usuario ha sido eliminado';
-                                            $mail->Body    = '<h1>Sus datos de usuario en el sistema del Colegio de Abogados del Estado
-                                            Carabobo han sido eliminados
-                                            </h1>
-                                            
-                                            <br>' . 'Si no ha sido usted el que ha realizado esta operacion lo invitamos a contactar con el 
-                                            soporte de la pagina web para solucionar el problema lo antes posible. <br>' .
-                    
-                                            '<p><em>Si tiene algun problema con respecto al funcionamiento
-                                            de la pagina web no dude en contactarnos al correo electronico informaticacolegioabogados@gmail.com</em></p>';
-                                            $mail->AltBody = 'Sus datos de usuario en el sistema del Colegio de Abogados del Estado
-                                            Carabobo han sido eliminados Si no ha sido usted el que ha realizado esta operacion lo invitamos a contactar con el 
-                                            soporte de la pagina web para solucionar el problema lo antes posible. ' . 
-                                            'Si tiene algun problema con respecto al funcionamiento
-                                            de la pagina web no dude en contactarnos al correo electronico informaticacolegioabogados@gmail.com';
-                                            
-                                            if (!$mail->send()) {
-                                                throw new Exception($mail->ErrorInfo);
-                                              }
-                                            
-                                            } catch (Exception $e) {
-                                                
-                                            }
-
-                                        echo "<div class='alert alert-success' role='alert'>
-                    Su usuario ha sido eliminado de forma exitosa!
-                </div>";
-                
-                                        echo        
-                                        "<br>
-                                        <form action='index.php'>
-                                        <button type='submit' id='buttom' class='btn btn-warning'>Salir</button>
-                                        </form>";
-                                    
-                                    session_start();
-                                                session_destroy();
-                                    }
-                        
-                        
-                        } else {
-                            echo "<div class='alert alert-danger' role='alert'>
-                    La contraseña es incorrecta, por favor intente de nuevo!
-                </div>";
-                    echo        
-            "<br>
-            <form action='delete.php'>
-            <button type='submit' id='buttom' class='btn btn-primary'>Intente de nuevo</button>
-            </form>
-            <br>
-                                        <form action='ingre.php'>
-                                        <input type='submit' class='btn btn-light' value='Inicio'>
-                                        </form>
-            <br>
-            <form action='index.php'>
-              <div class='btn-group'>
-              <a href='logout.php' class='btn btn-danger' aria-current='page'>Cerrar sesion</a>
-        <button type='submit' id='buttom' class='btn btn-warning'>Salir</button>
-        </div>
-        </form>";
-                        }
-
-                    } else {
-                        echo "<div class='alert alert-danger' role='alert'>
-                    La contraseña no coincide con su confirmacion, por favor intente de nuevo!
-                </div>";
-                    echo        
-            "<br>
-            <form action='delete.php'>
-            <button type='submit' id='buttom' class='btn btn-primary'>Intente de nuevo</button>
-            </form>
-            <br>
-                                        <form action='ingre.php'>
-                                        <input type='submit' class='btn btn-light' value='Inicio'>
-                                        </form>
-            <br>
-            <form action='index.php'>
-              <div class='btn-group'>
-              <a href='logout.php' class='btn btn-danger' aria-current='page'>Cerrar sesion</a>
-        <button type='submit' id='buttom' class='btn btn-warning'>Salir</button>
-        </div>
-        </form>";
-                    }
-
-            }
+function back(): void { echo "<form action='delete.php' class='mt-3'><button type='submit' class='btn btn-primary'>Intente de nuevo</button></form>"; }
+function finish(): void { echo "</div></div></div></div></div>"; render_footer(); unset($_SESSION['delete_flow']); exit; }
 ?>
-
-</div>
-        </div>
-        </div>
-        <div class="sticky-bottom">
-                <a class="img-fluid" href="soport.php">
-                <img src="contact2.png" alt="Soporte" width="100" height="100">
-              </a>
-                </div>
-</div>
-    </body>
-</html>

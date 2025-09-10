@@ -19,6 +19,7 @@
                     <div class="col-auto p-5">
                     <p class='h1 text-light'>Crea tu cuenta!</p>
             <form action="regis2.php" method="post">
+                <?php require_once __DIR__ . '/src/bootstrap.php'; echo csrf_input(); ?>
                 
                 
                 <br>
