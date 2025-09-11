@@ -1,74 +1,49 @@
-<!-- ANGELO POLGROSSI | 04124856320 -->
-<!DOCTYPE html>
-<html lang="es">
-<html>
-    <head>
-        <meta charset="UTF-8">
-        <meta http-equiv="X-UA-Compatible" content="ie=edge">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Search Operations</title> <!--title of page-->
-        <link rel="shortcut icon" href="favicon.png">
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-Zenh87qX5JnK2Jl0vWa8Ck2rdkQ2Bzep5IDxbcnCeuOxjzrPF/et3URy9Bv1WTRi" crossorigin="anonymous">
-
-    </head>
-
-    <body>
-    <div
-    style="
-      background: url('piscina.jpg') no-repeat center center fixed;
-      background-size: cover;
-    ">
-            <div class="container">
-                <div class="row min-vh-100 justify-content-center align-items-center">
-                    <div class="col-auto p-5">
-
-                        <form action="SearchCodClie.php" method="post">
-                            <h2 class= "text-light text-center">Search by CodClie</h2>
-                            <br>
-                            <div class="form-floating mb-3"> 
-                                <input type="text"  name="ci" class="form-control" placeholder="name@example.com" required> 
-                                <label for="floatingInput">Cedula</label>
-                            </div>
-                        
-                            <input type="submit" class="btn btn-success w-100" value="Search"> 
-                        </form>
-
-                        <br>
-
-                        <form action="SearchNumeroD.php" method="post">
-                            <h2 class= "text-light text-center">Search by NumeroD</h2>
-                            <br>
-                            <div class="form-floating mb-3"> 
-                                <input type="number"  name="NumeroD" class="form-control" placeholder="name@example.com" required> 
-                                <label for="floatingInput">NumeroD</label>
-                            </div>
-                        
-                            <input type="submit" class="btn btn-success w-100" value="Search"> 
-                        </form>
-
-                        <br>
-
-                        <form action="SearchRange.php" method="post">
-                            <h2 class= "text-light text-center">Search by solvency range</h2>
-                            <br>
-                            <div class="form-floating mb-3"> 
-                                <input type="text"  name="desde" class="form-control" placeholder="name@example.com" required> 
-                                <label for="floatingInput">Desde</label>
-                            </div>
-
-                            <div class="form-floating mb-3"> 
-                                <input type="text"  name="hasta" class="form-control" placeholder="name@example.com" required> 
-                                <label for="floatingInput">Hasta</label>
-                            </div>
-                        
-                            <input type="submit" class="btn btn-success w-100" value="Search"> 
-                        </form>
-                        
-                        <br><a class='btn btn-success' href='HomeFailed.php' role='button'>Return</a>
-
-                    </div>
-                </div>
+<?php
+require_once __DIR__ . '/src/bootstrap.php';
+require_once __DIR__ . '/src/layout.php';
+require_auth();
+render_header('Buscar Operaciones', 'piscina.jpg');
+?>
+<div class="min-h-screen px-4 py-10">
+    <div class="max-w-2xl mx-auto">
+        <div class="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl shadow p-8 space-y-10">
+            <div>
+                <h2 class="text-xl font-semibold text-white tracking-tight text-center">Buscar por Cédula (CodClie)</h2>
+                <form action="SearchCodClie.php" method="post" class="mt-4 space-y-4">
+                    <?php echo csrf_input(); ?>
+                    <input name="ci" required class="w-full rounded-md bg-white/10 border border-white/20 focus:border-emerald-400 focus:ring-emerald-400/40 text-white px-4 py-2.5" placeholder="V12345678" />
+                    <button class="w-full rounded-md bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-6 py-2.5">Buscar</button>
+                </form>
             </div>
+            <div>
+                <h2 class="text-xl font-semibold text-white tracking-tight text-center">Buscar por NumeroD</h2>
+                <form action="SearchNumeroD.php" method="post" class="mt-4 space-y-4">
+                    <?php echo csrf_input(); ?>
+                    <input name="NumeroD" type="number" required class="w-full rounded-md bg-white/10 border border-white/20 focus:border-emerald-400 focus:ring-emerald-400/40 text-white px-4 py-2.5" placeholder="12345" />
+                    <button class="w-full rounded-md bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-6 py-2.5">Buscar</button>
+                </form>
+            </div>
+            <div>
+                <h2 class="text-xl font-semibold text-white tracking-tight text-center">Buscar por Rango de Fecha (hasta)</h2>
+                <form action="SearchRange.php" method="post" class="mt-4 space-y-4">
+                    <?php echo csrf_input(); ?>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm text-white/80 mb-1">Desde (YYYY-MM-DD)</label>
+                            <input name="desde" required pattern="\\d{4}-\\d{2}-\\d{2}" class="w-full rounded-md bg-white/10 border border-white/20 focus:border-emerald-400 focus:ring-emerald-400/40 text-white px-4 py-2.5" placeholder="2025-01-01" />
+                        </div>
+                        <div>
+                            <label class="block text-sm text-white/80 mb-1">Hasta (YYYY-MM-DD)</label>
+                            <input name="hasta" required pattern="\\d{4}-\\d{2}-\\d{2}" class="w-full rounded-md bg-white/10 border border-white/20 focus:border-emerald-400 focus:ring-emerald-400/40 text-white px-4 py-2.5" placeholder="2025-12-31" />
+                        </div>
+                    </div>
+                    <button class="w-full rounded-md bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-6 py-2.5">Buscar</button>
+                </form>
+            </div>
+            <div class="pt-2 text-center">
+                <a href="HomeFailed.php" class="inline-flex justify-center rounded-md bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-6 py-2.5">Volver</a>
+            </div>
+        </div>
     </div>
-    </body>
-</html>
+</div>
+<?php render_footer(); ?>

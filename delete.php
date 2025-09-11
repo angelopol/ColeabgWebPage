@@ -6,25 +6,23 @@ require_auth();
 $_SESSION['delete_flow'] = time();
 render_header('Eliminar Usuario', 'domo.jpg');
 ?>
-<div class="container">
-  <div class="row min-vh-100 justify-content-center align-items-center">
-    <div class="col-lg-6 col-md-8 col-sm-10">
-      <div class="card shadow border-danger">
-        <div class="card-body text-center">
-          <h1 class="h4 mb-4 text-danger">¿Seguro que deseas eliminar tu usuario?</h1>
-          <p class="text-muted">Esta acción es permanente y eliminará tu cuenta de acceso.</p>
-          <form action="delete2.php" method="post" class="d-grid gap-2">
-            <?= csrf_input(); ?>
-            <button class="btn btn-outline-danger" type="submit">Sí, continuar</button>
-          </form>
-          <div class="mt-3">
-            <a href="pageuser.php" class="btn btn-secondary">Cancelar</a>
-          </div>
-        </div>
-      </div>
+<div class="min-h-screen flex items-center justify-center px-4 py-12">
+  <div class="w-full max-w-lg space-y-6">
+    <div class="rounded-2xl border border-rose-500/30 bg-rose-900/10 backdrop-blur-sm p-8 shadow-lg">
+      <h1 class="text-xl font-semibold text-rose-300 mb-3 text-center">¿Seguro que deseas eliminar tu usuario?</h1>
+      <p class="text-sm text-rose-100/80 mb-6 text-center">Esta acción es permanente y eliminará tu cuenta de acceso.</p>
+      <form action="delete2.php" method="post" class="space-y-4">
+        <?= csrf_input(); ?>
+        <button type="submit" class="w-full inline-flex justify-center items-center gap-2 rounded-md border border-rose-400/40 bg-rose-500/20 px-5 py-2.5 text-sm font-medium text-rose-100 hover:bg-rose-500/30 focus:outline-none focus:ring-2 focus:ring-rose-400/50 transition">
+          Sí, continuar
+        </button>
+      </form>
       <div class="mt-4 text-center">
-        <a href="soport.php"><img src="contact2.png" width="80" alt="Soporte"></a>
+        <a href="pageuser.php" class="inline-flex justify-center rounded-md bg-neutral-700/60 hover:bg-neutral-600 text-neutral-100 text-sm font-medium px-5 py-2 transition focus:outline-none focus:ring focus:ring-neutral-400/40">Cancelar</a>
       </div>
+    </div>
+    <div class="text-center">
+      <a href="soport.php" class="inline-block opacity-80 hover:opacity-100 transition"><img src="contact2.png" width="80" alt="Soporte" class="mx-auto"></a>
     </div>
   </div>
 </div>

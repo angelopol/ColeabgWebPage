@@ -6,28 +6,24 @@ if (!verify_csrf()) { render_header('Token inválido','domo.jpg'); echo alert_bo
 if (empty($_SESSION['delete_flow'])) { redirect('delete.php'); }
 render_header('Confirmar Eliminación', 'domo.jpg');
 ?>
-<div class="container">
-  <div class="row min-vh-100 justify-content-center align-items-center">
-    <div class="col-lg-5 col-md-7 col-sm-10">
-      <div class="card shadow border-danger">
-        <div class="card-body">
-          <h1 class="h5 mb-3 text-danger">Confirma tu contraseña</h1>
-          <form action="delete3.php" method="post" class="needs-validation" novalidate>
-            <?= csrf_input(); ?>
-            <div class="mb-3">
-              <label class="form-label">Contraseña</label>
-              <input name="contra" type="password" class="form-control" required minlength="8">
-            </div>
-            <div class="mb-3">
-              <label class="form-label">Confirmar contraseña</label>
-              <input name="contra2" type="password" class="form-control" required minlength="8">
-            </div>
-            <button class="btn btn-outline-danger w-100" type="submit">Eliminar Cuenta</button>
-          </form>
-          <div class="mt-3 text-center">
-            <a href="pageuser.php" class="btn btn-secondary">Cancelar</a>
-          </div>
+<div class="min-h-screen flex items-center justify-center px-4 py-12">
+  <div class="w-full max-w-md">
+    <div class="rounded-2xl border border-rose-500/30 bg-rose-900/10 backdrop-blur-sm p-8 shadow-lg">
+      <h1 class="text-lg font-semibold text-rose-300 mb-5">Confirma tu contraseña</h1>
+      <form action="delete3.php" method="post" novalidate class="space-y-5">
+        <?= csrf_input(); ?>
+        <div>
+          <label class="block text-sm font-medium text-neutral-200 mb-1">Contraseña</label>
+          <input name="contra" type="password" required minlength="8" class="w-full rounded-md bg-neutral-800/60 border border-neutral-600/60 px-3 py-2 text-neutral-100 focus:outline-none focus:ring-2 focus:ring-rose-400/50 focus:border-rose-400 placeholder-neutral-500">
         </div>
+        <div>
+          <label class="block text-sm font-medium text-neutral-200 mb-1">Confirmar contraseña</label>
+          <input name="contra2" type="password" required minlength="8" class="w-full rounded-md bg-neutral-800/60 border border-neutral-600/60 px-3 py-2 text-neutral-100 focus:outline-none focus:ring-2 focus:ring-rose-400/50 focus:border-rose-400 placeholder-neutral-500">
+        </div>
+        <button type="submit" class="w-full inline-flex justify-center rounded-md border border-rose-400/40 bg-rose-500/20 px-5 py-2.5 text-sm font-medium text-rose-100 hover:bg-rose-500/30 focus:outline-none focus:ring-2 focus:ring-rose-400/50 transition">Eliminar Cuenta</button>
+      </form>
+      <div class="mt-6 text-center">
+        <a href="pageuser.php" class="inline-flex justify-center rounded-md bg-neutral-700/60 hover:bg-neutral-600 text-neutral-100 text-sm font-medium px-5 py-2 transition focus:outline-none focus:ring focus:ring-neutral-400/40">Cancelar</a>
       </div>
     </div>
   </div>

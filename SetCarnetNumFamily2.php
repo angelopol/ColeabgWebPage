@@ -1,182 +1,104 @@
-<!-- ANGELO POLGROSSI | 04124856320 -->
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Results of process</title>
-    <link rel="shortcut icon" href="favicon.png">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-Zenh87qX5JnK2Jl0vWa8Ck2rdkQ2Bzep5IDxbcnCeuOxjzrPF/et3URy9Bv1WTRi" crossorigin="anonymous">
-</head>
-<body>
-    <div
-    style="
-      background: url('piscina.jpg') no-repeat center center fixed;
-      background-size: cover;
-    ">
-            <div class="container">
-                <div class="row min-vh-100 justify-content-center align-items-center">
-                    <div class="col-auto p-5">
-
 <?php
+require_once __DIR__ . '/src/bootstrap.php';
+require_once __DIR__ . '/src/layout.php';
+render_header('Resultado - Carnet Familiar', 'piscina.jpg');
 
-$ci = $_REQUEST["ci"];
-$Abgci = $_REQUEST["AbgCi"];
-$nombre = $_REQUEST["nombre"];
-$NumeroD = $_REQUEST["NumeroD"];
-$direccion = $_REQUEST["direccion"];
-$CarnetNum = $_REQUEST["CarnetNum"];
-$CarnetNum2 = $_REQUEST["CarnetNum2"];
+$ci = trim($_POST['ci'] ?? '');
+$abgCi = trim($_POST['AbgCi'] ?? '');
+$nombre = trim($_POST['nombre'] ?? '');
+$numeroD = trim($_POST['NumeroD'] ?? '');
+$direccion = trim($_POST['direccion'] ?? '');
+$carnet = trim($_POST['CarnetNum'] ?? '');
+$carnet2 = trim($_POST['CarnetNum2'] ?? '');
 
-if ($ci == "" || $Abgci == "") {
-    echo "<div class='alert alert-danger' role='alert'>
-                Es necesario que rellene todos los campos. 
-                </div>";
-            echo "<br>
-                <form action='solv.php'>
-                <button type='submit' id='buttom' class='btn btn-primary'>Intente de nuevo</button>
-
-                </form>";
-}
-else {
-
-    if ($CarnetNum == $CarnetNum2) {
-
-        $serverName = "sql5111.site4now.net"; 
-$connectionInfo = array( "Database"=>"db_aa07eb_coleabg", "UID"=>"db_aa07eb_coleabg_admin", "PWD"=>"$0p0rt3ca" ,'ReturnDatesAsStrings'=>true);
-require './conn.php'; $conn = sqlsrv_connect(DataConnect()[0], DataConnect()[1]);
-
-        $consultusers = "SELECT * FROM SOLV where CodClie = '$ci' and Status = 1";
-
-        $stmtusers = sqlsrv_query( $conn, $consultusers);
-        $rowclieusers = sqlsrv_fetch_array( $stmtusers, SQLSRV_FETCH_ASSOC);
-        $nullornotusers = is_null($rowclieusers);
-
-        if ($nullornotusers == true) {
-
-            $consultcarnet = "SELECT * FROM SOLV where CarnetNum2 = '$CarnetNum' and Status = 1";
-
-            $stmtcarnet = sqlsrv_query( $conn, $consultcarnet);
-            $rowcliecarnet = sqlsrv_fetch_array( $stmtcarnet, SQLSRV_FETCH_ASSOC);
-            $nullornotcarnet = is_null($rowcliecarnet);
-
-            if ($nullornotcarnet == true) {
-
-                $consultperson = "SELECT * FROM SACLIE where CodClie like '%$Abgci%'";
-
-                $stmtperson = sqlsrv_query( $conn, $consultperson);
-                $rowclieperson = sqlsrv_fetch_array( $stmtperson, SQLSRV_FETCH_ASSOC);
-                $nullornotperson = is_null($rowclieperson);
-
-                if ($nullornotperson == false) {
-
-                    $consultsolv = "SELECT * FROM SOLV where CodClie like '%$Abgci%' and Status = 1";
-
-                    $stmtsolv = sqlsrv_query( $conn, $consultsolv);
-                    $rowcliesolv = sqlsrv_fetch_array( $stmtsolv, SQLSRV_FETCH_ASSOC);
-                    $nullornotsolv = is_null($rowcliesolv);
-
-                    if ($nullornotsolv == false) {
-
-                        $consultusers = "INSERT INTO SOLV (CodClie, Status, CarnetNum, CarnetNum2, Name, Direccion, NumeroD)
-                        VALUES ('$ci', 1, '$Abgci', '$CarnetNum', '$nombre', '$direccion', '$NumeroD')";
-                        
-                        $stmtusers = sqlsrv_query( $conn, $consultusers);
-
-                            if ($stmtusers == false) {
-                                echo "<div class='alert alert-danger' role='alert'>
-                                    Ha ocurrido un error, por favor intente de nuevo.
-                                    </div>";
-                                echo "<br>
-                                    <form action='SetCarnetNumFamily.php'>
-                                    <button type='submit' id='buttom' class='btn btn-primary'>Intente de nuevo</button>
-                                    </form>";
-                            } else {
-                                echo "<div class='alert alert-success' role='alert'>
-                                    Carnet de CI: $ci, Numero: $CarnetNum, almacenado correctamente!
-                                    </div>";
-                                echo "<br>
-                                    <form action='SetCarnetNumFamily.php'>
-                                    <button type='submit' id='buttom' class='btn btn-primary'>Continuar</button>
-                                    </form>";
-                            }
-
-                        } else {
-                            echo "<div class='alert alert-danger' role='alert'>
-                                Ha ocurrido un error: no se encuentra registrada la solvencia del abogado.
-                                </div>";
-                            echo "<br>
-                                <form action='SetCarnetNumFamily.php'>
-                                <button type='submit' id='buttom' class='btn btn-primary'>Intente de nuevo</button>
-                                </form>"; 
-                        }
-
-                } else {
-                    echo "<div class='alert alert-danger' role='alert'>
-                        Ha ocurrido un error: la cedula del abogado es incorrecta o este no se encuentra registrado.
-                        </div>";
-                    echo "<br>
-                        <form action='SetCarnetNumFamily.php'>
-                        <button type='submit' id='buttom' class='btn btn-primary'>Intente de nuevo</button>
-                        </form>"; 
-                }
-
-                } else {
-                    echo "<div class='alert alert-danger' role='alert'>
-                        Ha ocurrido un error: ya existe una persona con ese numero de Carnet.
-                        </div>";
-                    echo "<br>
-                        <form action='SetCarnetNumFamily.php'>
-                        <button type='submit' id='buttom' class='btn btn-primary'>Intente de nuevo</button>
-                        </form>"; 
-                }
-
-        } else {
-
-            $consultusers = "UPDATE SOLV SET CarnetNum2 = '$CarnetNum' WHERE CodClie = '$ci' and Status = 1";
-                
-            $stmtusers = sqlsrv_query( $conn, $consultusers);
-
-                if ($stmtusers == false) {
-                    echo "<div class='alert alert-danger' role='alert'>
-                        Ha ocurrido un error, por favor intente de nuevo.
-                        </div>";
-                    echo "<br>
-                        <form action='SetCarnetNumFamily.php'>
-                        <button type='submit' id='buttom' class='btn btn-primary'>Intentar de nuevo</button>
-                        </form>";
-                } else {
-                    echo "<div class='alert alert-success' role='alert'>
-                        Carnet de CI: $ci, Numero: $CarnetNum, almacenado correctamente!
-                        </div>";
-                    echo "<br>
-                        <form action='SetCarnetNumFamily.php'>
-                        <button type='submit' id='buttom' class='btn btn-primary'>Continuar</button>
-                        </form>";
-                }
-
-        }
-
-    } else {
-
-        echo "<div class='alert alert-danger' role='alert'>
-            El numero de carnet no coincide con su confirmacion.
-            </div>";
-        echo "<br>
-            <h2 class ='text-light text-center'>O</h2>
-            <br>
-            <form action='SetCarnetNumFamily.php'>
-            <button type='submit' id='buttom' class='btn btn-primary'>Intente de nuevo</button>
-            </form>";
-
-    }
+function fam_alert($type, $msg): string {
+  $colors = [
+    'danger' => 'bg-rose-500/15 text-rose-200 border border-rose-400/30',
+    'success' => 'bg-emerald-500/15 text-emerald-200 border border-emerald-400/30',
+    'info' => 'bg-sky-500/15 text-sky-200 border border-sky-400/30'
+  ];
+  $class = $colors[$type] ?? $colors['info'];
+  return "<div class='rounded-lg px-4 py-3 text-sm font-medium {$class}'>{$msg}</div>";
 }
 ?>
+<div class="min-h-screen px-4 py-12">
+  <div class="max-w-2xl mx-auto">
+    <div class="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8 shadow space-y-6">
+      <h1 class="text-xl font-semibold text-white tracking-tight">Resultado</h1>
+      <?php
+      if ($ci === '' || $abgCi === '' || $carnet === '' || $nombre === '' || $direccion === '' || $numeroD === '') {
+          echo fam_alert('danger', 'Es necesario que rellene todos los campos.');
+          echo "<form action='SetCarnetNumFamily.php' class='pt-4'><button type='submit' class='w-full inline-flex justify-center rounded-md bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-5 py-2.5 transition'>Intente de nuevo</button></form>";
+      } elseif ($carnet !== $carnet2) {
+          echo fam_alert('danger', 'El número de carnet no coincide con su confirmación.');
+          echo "<form action='SetCarnetNumFamily.php' class='pt-4'><button type='submit' class='w-full inline-flex justify-center rounded-md bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-5 py-2.5 transition'>Intente de nuevo</button></form>";
+      } else {
+          try {
+              $pdo = db();
+              // 1. Comprobar si ya existe un registro para el familiar (CodClie exacto y activo)
+              $stmt = $pdo->prepare("SELECT TOP 1 CarnetNum2 FROM SOLV WHERE CodClie LIKE ? AND Status = 1");
+              $stmt->execute(['%' . $ci . '%']);
+              $existingFamilia = $stmt->fetch(PDO::FETCH_ASSOC);
 
+              // 2. Comprobar carnet duplicado
+              $stmt = $pdo->prepare("SELECT TOP 1 1 FROM SOLV WHERE CarnetNum2 = ? AND Status = 1");
+              $stmt->execute([$carnet]);
+              $duplicado = (bool)$stmt->fetchColumn();
+
+              // 3. Verificar existencia del abogado y solvencia del abogado
+              $stmt = $pdo->prepare("SELECT TOP 1 1 FROM SACLIE WHERE CodClie LIKE ?");
+              $stmt->execute(['%' . $abgCi . '%']);
+              $abogadoExiste = (bool)$stmt->fetchColumn();
+
+              $stmt = $pdo->prepare("SELECT TOP 1 1 FROM SOLV WHERE CodClie LIKE ? AND Status = 1");
+              $stmt->execute(['%' . $abgCi . '%']);
+              $abogadoSolvente = (bool)$stmt->fetchColumn();
+
+              if (!$abogadoExiste) {
+                  echo fam_alert('danger', 'La cédula del abogado es incorrecta o no está registrada.');
+                  echo "<form action='SetCarnetNumFamily.php' class='pt-4'><button type='submit' class='w-full inline-flex justify-center rounded-md bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-5 py-2.5 transition'>Intente de nuevo</button></form>";
+              } elseif (!$abogadoSolvente) {
+                  echo fam_alert('danger', 'No se encuentra registrada la solvencia del abogado.');
+                  echo "<form action='SetCarnetNumFamily.php' class='pt-4'><button type='submit' class='w-full inline-flex justify-center rounded-md bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-5 py-2.5 transition'>Intente de nuevo</button></form>";
+              } elseif ($duplicado && (!$existingFamilia || ($existingFamilia && $existingFamilia['CarnetNum2'] !== $carnet))) {
+                  echo fam_alert('danger', 'Ya existe una persona con ese número de carnet.');
+                  echo "<form action='SetCarnetNumFamily.php' class='pt-4'><button type='submit' class='w-full inline-flex justify-center rounded-md bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-5 py-2.5 transition'>Intente de nuevo</button></form>";
+              } else {
+                  if ($existingFamilia) {
+                      // Actualizar solo el campo CarnetNum2 si ya existía (comportamiento similar al original update branch)
+                      $upd = $pdo->prepare("UPDATE SOLV SET CarnetNum2 = ? WHERE CodClie LIKE ? AND Status = 1");
+                      $ok = $upd->execute([$carnet, '%' . $ci . '%']);
+                      if (!$ok || !$upd->rowCount()) {
+                          echo fam_alert('danger', 'Ha ocurrido un error al actualizar, intente de nuevo.');
+                          echo "<form action='SetCarnetNumFamily.php' class='pt-4'><button type='submit' class='w-full inline-flex justify-center rounded-md bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-5 py-2.5 transition'>Intentar de nuevo</button></form>";
+                      } else {
+                          echo fam_alert('success', 'Carnet actualizado correctamente para CI: ' . h($ci));
+                          echo "<form action='SetCarnetNumFamily.php' class='pt-4'><button type='submit' class='w-full inline-flex justify-center rounded-md bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-5 py-2.5 transition'>Continuar</button></form>";
+                      }
+                  } else {
+                      // Insertar nuevo registro familiar
+                      $ins = $pdo->prepare("INSERT INTO SOLV (CodClie, Status, CarnetNum, CarnetNum2, Name, Direccion, NumeroD) VALUES (?, 1, ?, ?, ?, ?, ?)");
+                      $ok = $ins->execute([$ci, $abgCi, $carnet, $nombre, $direccion, $numeroD]);
+                      if (!$ok) {
+                          echo fam_alert('danger', 'Ha ocurrido un error al insertar, intente de nuevo.');
+                          echo "<form action='SetCarnetNumFamily.php' class='pt-4'><button type='submit' class='w-full inline-flex justify-center rounded-md bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-5 py-2.5 transition'>Intente de nuevo</button></form>";
+                      } else {
+                          echo fam_alert('success', 'Carnet almacenado correctamente para CI: ' . h($ci));
+                          echo "<form action='SetCarnetNumFamily.php' class='pt-4'><button type='submit' class='w-full inline-flex justify-center rounded-md bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-5 py-2.5 transition'>Continuar</button></form>";
+                      }
+                  }
+              }
+          } catch (Throwable $e) {
+              error_log('[SetCarnetNumFamily2] ' . $e->getMessage());
+              echo fam_alert('danger', 'Error interno al procesar la solicitud.');
+          }
+      }
+      ?>
+      <div class="pt-6 flex flex-wrap gap-3">
+        <a href="index.php" class="inline-flex justify-center rounded-md bg-neutral-700/70 hover:bg-neutral-600 text-neutral-100 text-sm font-medium px-5 py-2 transition focus:outline-none focus:ring focus:ring-neutral-400/40">Inicio</a>
+        <a href="SetCarnetNum.php" class="inline-flex justify-center rounded-md bg-sky-600 hover:bg-sky-500 text-white text-sm font-medium px-5 py-2 transition focus:outline-none focus:ring focus:ring-sky-400/40">Carnet Abogado</a>
+      </div>
+    </div>
+  </div>
 </div>
-</div>
-</div>
-</div>
-</body>
-</html>
+<?php render_footer(); ?>

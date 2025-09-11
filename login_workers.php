@@ -1,79 +1,42 @@
-<!-- ANGELO POLGROSSI | 04124856320 -->
-
 <?php
+require_once __DIR__ . '/src/bootstrap.php';
+require_once __DIR__ . '/src/layout.php';
 
-    if ($_POST["user"] == ""){
+$postedUser = trim($_POST['user'] ?? '');
+if ($postedUser === '') { header('Location: ingre_workers.php'); exit; }
 
-        header("Location: ingre_workers.php");
-    }
-?>
+$userjoined = isset($_COOKIE['user']) ? $_COOKIE['user'] : $postedUser;
 
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Datos incorrectos</title>
-    <link rel="shortcut icon" href="favicon.png">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-Zenh87qX5JnK2Jl0vWa8Ck2rdkQ2Bzep5IDxbcnCeuOxjzrPF/et3URy9Bv1WTRi" crossorigin="anonymous">
-</head>
-<body>
-    <div
-    style="
-      background: url('domo.jpg') no-repeat center center fixed;
-      background-size: cover;
-    ">
-            <div class="container">
-                <div class="row min-vh-100 justify-content-center align-items-center">
-                    <div class="col-auto p-5">
-<?php
-
-if( isset( $_COOKIE['user']) == true){
-
-    $userjoined = $_COOKIE['user'];
-}   
-
-else {
-
-    $userjoined = $_POST["user"];
+try {
+        $pdo = db();
+        $stmt = $pdo->prepare("SELECT TOP 1 email FROM USUARIOS WHERE email = ? AND pass IS NULL AND Clase IS NULL AND CodClie IS NULL");
+        $stmt->execute([$userjoined]);
+        $valid = (bool)$stmt->fetchColumn();
+} catch (Throwable $e) {
+        error_log('[login_workers] ' . $e->getMessage());
+        $valid = false;
 }
 
-require './conn.php'; $conn = DataConnect();
-$consultusers = "SELECT * FROM USUARIOS where email = '$userjoined' and pass IS NULL and Clase IS NULL and CodClie IS NULL";
-
-$stmtusers = $conn->prepare($consultusers);
-$stmtusers->execute();
-$rowtotals= $stmtusers->fetchAll(PDO::FETCH_ASSOC);
-$stmtusers->closeCursor();
-
-if (isset($rowtotals)) {
-
-    setcookie('user',"", time() - (3600 * 24 * 24));
-
-    setcookie('user',$userjoined, time() + (3600 * 24 * 24));
-
-    header("Location: workers.php");
-
-    exit();
-
-} else { 
-    
-    
-    echo "<div class='alert alert-danger' role='alert'>
-    Datos ingresados de forma incorrecta!
-  </div>";
-    echo        
-            "<br>
-            <form action='ingre_workers.php'>
-            <button type='submit' id='buttom' class='btn btn-primary'>Intente de nuevo</button>
-            </form>";
+if ($valid) {
+        setcookie('user', '', time() - 3600, '/');
+        setcookie('user', $userjoined, time() + 3600 * 24 * 30, '/');
+        header('Location: workers.php');
+        exit;
 }
 
+render_header('Datos incorrectos', 'domo.jpg');
 ?>
+<div class="min-h-screen px-4 py-12">
+    <div class="max-w-md mx-auto">
+        <div class="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8 shadow space-y-6">
+            <h1 class="text-xl font-semibold text-white tracking-tight">Error</h1>
+            <div class="rounded-lg px-4 py-3 text-sm font-medium bg-rose-500/15 text-rose-200 border border-rose-400/30">
+                Datos ingresados de forma incorrecta.
+            </div>
+            <form action="ingre_workers.php" class="pt-2">
+                <button type="submit" class="w-full inline-flex justify-center rounded-md bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-5 py-2.5 transition focus:outline-none focus:ring focus:ring-indigo-400/50">Intente de nuevo</button>
+            </form>
+        </div>
+    </div>
 </div>
-</div>
-</div>
-</div>
-</body>
-</html>
+<?php render_footer(); ?>

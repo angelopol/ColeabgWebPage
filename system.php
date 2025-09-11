@@ -60,83 +60,79 @@ if ($lawyer) {
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Verifica las operaciones</title>
   <link rel="shortcut icon" href="favicon.png">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>.text-light{color:#f1f5f9}.sticky-bottom{position:fixed;bottom:1rem;right:1rem}</style>
 </head>
 <body>
-<div style="background: url('piscina.jpg') no-repeat center center fixed;background-size: cover;">
-  <div class="container">
-    <div class="row min-vh-100 justify-content-center align-items-center">
-      <div class="col-auto p-5">
+<div class="min-h-screen bg-cover bg-center" style="background-image:url('piscina.jpg')">
+  <div class="w-full flex justify-center items-center min-h-screen px-4 py-10">
+      <div class="max-w-2xl w-full bg-black/50 backdrop-blur-sm rounded-lg p-6 space-y-4">
         <?php if ($notFound): ?>
-          <div class="alert alert-danger" role="alert">Abogado no inscrito o identificación errónea, intente de nuevo</div>
-          <br>
-          <form action="search.php"><input type="submit" class="btn btn-success w-100" value="Realizar otra búsqueda"></form>
-          <br>
-          <form action="index.php"><button type="submit" class="btn btn-warning">Salir</button></form>
-                <?php elseif ($multiple && !$lawyer): ?>
-                  <div class="alert alert-info" role="alert">Se encontraron múltiples coincidencias, seleccione el abogado:</div>
-                  <ul class="list-group mb-3">
-                    <?php foreach ($candidates as $cand): ?>
-                      <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <span><?= h($cand['CodClie'] ?? '') ?> | <?= h($cand['Clase'] ?? '') ?> | <?= h($cand['Descrip'] ?? '') ?></span>
-                        <a class="btn btn-sm btn-primary" href="system.php?input=<?= h(urlencode($input)) ?>&cod=<?= h(urlencode($cand['CodClie'] ?? '')) ?>">Ver</a>
-                      </li>
-                    <?php endforeach; ?>
-                  </ul>
-                  <a href="search.php" class="btn btn-success">Nueva búsqueda</a>
-                  <form class="mt-2" action="index.php"><button type="submit" class="btn btn-warning">Salir</button></form>
-        <?php else: ?>
-          <p class="h1 text-light">Abogado inscrito!</p><br>
-          <?php if ($solv): ?>
-            <p class="text-light">Solvente hasta: <?= h($solv['hasta'] ?? '') ?></p><br>
-          <?php else: ?>
-            <p class="text-light">Solvencia no registrada</p><br>
-          <?php endif; ?>
-          <p class="text-light">CI: <?= h($lawyer['CodClie'] ?? '') ?></p><br>
-          <p class="text-light">Inpre: <?= h($lawyer['Clase'] ?? '') ?></p><br>
-          <?php if ($insc): ?>
-            <p class="text-light">Fecha de Inscripción: <?= h($insc['Fecha'] ?? '') ?></p><br>
-            <p class="text-light">Número de Inscripción: <?= h($insc['Numero'] ?? '') ?></p><br>
-            <p class="text-light">Folio: <?= h($insc['Folio'] ?? '') ?></p><br>
-          <?php endif; ?>
-          <p class="text-light"><?= h($lawyer['Descrip'] ?? '') ?></p><br>
-          <?php if ($solv && !empty($solv['CarnetNum2'])): ?>
-            <p class="text-light">CarnetNum: <?= h($solv['CarnetNum2']) ?></p><br>
-          <?php else: ?>
-            <p class="text-light">No posee carnet de seguridad</p><br>
-          <?php endif; ?>
-
-          <?php if ($year !== null): ?>
-            <p class="h2 text-light">Operaciones en el año <?= h($year) ?>:</p><br>
-          <?php else: ?>
-            <p class="h2 text-light">Operaciones recientes:</p><br>
-          <?php endif; ?>
-
-          <?php if ($operations): ?>
-            <?php foreach ($operations as $op): ?>
-              <p class="text-light"><?= h($op['FechaE']) ?> <?= h($op['NumeroD']) ?> <?= h($op['OrdenC']) ?> <?= h(trim(($op['Notas1'] ?? '') . ' ' . ($op['Notas2'] ?? '') . ' ' . ($op['Notas3'] ?? '') . ' ' . ($op['Notas4'] ?? '') . ' ' . ($op['Notas5'] ?? '') . ' ' . ($op['Notas6'] ?? '') . ' ' . ($op['Notas7'] ?? ''))) ?></p>
-            <?php endforeach; ?>
-          <?php else: ?>
-            <p class="text-light">Sin transacciones <?= $year !== null ? 'en el año ' . h($year) : 'recientes' ?>...</p>
-          <?php endif; ?>
-
-          <br>
-          <div class="btn-group">
-            <?php if ($hasHistoric): ?>
-              <a href="all.php?ci=<?= h(urlencode($input)) ?>&ip=0" class="btn btn-success">Todas las operaciones</a>
-            <?php endif; ?>
-            <a href="search.php" class="btn btn-success">Realizar otra búsqueda</a>
+          <div class="rounded bg-red-600/80 text-white px-4 py-3 text-sm font-semibold">Abogado no inscrito o identificación errónea, intente de nuevo</div>
+          <div class="flex gap-3 mt-4">
+            <form action="search.php" class="flex-1"><button class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-2 rounded">Realizar otra búsqueda</button></form>
+            <form action="index.php"><button type="submit" class="bg-amber-500 hover:bg-amber-400 text-white font-medium py-2 px-4 rounded">Salir</button></form>
           </div>
-          <br><br>
-          <form action="index.php"><button type="submit" class="btn btn-warning">Salir</button></form>
+        <?php elseif ($multiple && !$lawyer): ?>
+          <div class="rounded bg-sky-600/80 text-white px-4 py-3 text-sm font-semibold">Se encontraron múltiples coincidencias, seleccione el abogado:</div>
+          <ul class="mt-4 divide-y divide-slate-600/40">
+            <?php foreach ($candidates as $cand): ?>
+              <li class="flex items-center justify-between py-2 gap-4">
+                <span class="text-slate-100 text-sm"><?= h($cand['CodClie'] ?? '') ?> | <?= h($cand['Clase'] ?? '') ?> | <?= h($cand['Descrip'] ?? '') ?></span>
+                <a class="inline-block text-xs bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-3 py-1 rounded" href="system.php?input=<?= h(urlencode($input)) ?>&cod=<?= h(urlencode($cand['CodClie'] ?? '')) ?>">Ver</a>
+              </li>
+            <?php endforeach; ?>
+          </ul>
+          <div class="flex gap-3 mt-4">
+            <a href="search.php" class="flex-1 text-center bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-2 rounded">Nueva búsqueda</a>
+            <form action="index.php"><button type="submit" class="bg-amber-500 hover:bg-amber-400 text-white font-medium py-2 px-4 rounded">Salir</button></form>
+          </div>
+        <?php else: ?>
+          <h1 class="text-3xl font-bold text-white">Abogado inscrito!</h1>
+          <div class="space-y-1 text-slate-100 text-sm mt-4">
+            <?php if ($solv): ?>
+              <p>Solvente hasta: <span class="font-semibold"><?= h($solv['hasta'] ?? '') ?></span></p>
+            <?php else: ?><p>Solvencia no registrada</p><?php endif; ?>
+            <p>CI: <span class="font-semibold"><?= h($lawyer['CodClie'] ?? '') ?></span></p>
+            <p>Inpre: <span class="font-semibold"><?= h($lawyer['Clase'] ?? '') ?></span></p>
+            <?php if ($insc): ?>
+              <p>Fecha de Inscripción: <?= h($insc['Fecha'] ?? '') ?></p>
+              <p>Número de Inscripción: <?= h($insc['Numero'] ?? '') ?></p>
+              <p>Folio: <?= h($insc['Folio'] ?? '') ?></p>
+            <?php endif; ?>
+            <p><?= h($lawyer['Descrip'] ?? '') ?></p>
+            <?php if ($solv && !empty($solv['CarnetNum2'])): ?>
+              <p>CarnetNum: <span class="font-semibold"><?= h($solv['CarnetNum2']) ?></span></p>
+            <?php else: ?><p>No posee carnet de seguridad</p><?php endif; ?>
+          </div>
+          <div class="mt-6">
+            <?php if ($year !== null): ?>
+              <h2 class="text-xl text-white font-semibold">Operaciones en el año <?= h($year) ?>:</h2>
+            <?php else: ?>
+              <h2 class="text-xl text-white font-semibold">Operaciones recientes:</h2>
+            <?php endif; ?>
+            <div class="mt-2 max-h-72 overflow-y-auto pr-2 space-y-1">
+              <?php if ($operations): ?>
+                <?php foreach ($operations as $op): ?>
+                  <p class="text-xs text-slate-200 leading-snug"><?= h($op['FechaE']) ?> <?= h($op['NumeroD']) ?> <?= h($op['OrdenC']) ?> <?= h(trim(($op['Notas1'] ?? '') . ' ' . ($op['Notas2'] ?? '') . ' ' . ($op['Notas3'] ?? '') . ' ' . ($op['Notas4'] ?? '') . ' ' . ($op['Notas5'] ?? '') . ' ' . ($op['Notas6'] ?? '') . ' ' . ($op['Notas7'] ?? ''))) ?></p>
+                <?php endforeach; ?>
+              <?php else: ?>
+                <p class="text-slate-300 text-sm">Sin transacciones <?= $year !== null ? 'en el año ' . h($year) : 'recientes' ?>...</p>
+              <?php endif; ?>
+            </div>
+          </div>
+          <div class="flex gap-3 mt-6 flex-wrap">
+            <?php if ($hasHistoric): ?>
+              <a href="all.php?ci=<?= h(urlencode($input)) ?>&ip=0" class="bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium px-4 py-2 rounded">Todas las operaciones</a>
+            <?php endif; ?>
+            <a href="search.php" class="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium px-4 py-2 rounded">Realizar otra búsqueda</a>
+            <form action="index.php"><button type="submit" class="bg-amber-500 hover:bg-amber-400 text-white text-sm font-medium px-4 py-2 rounded">Salir</button></form>
+          </div>
         <?php endif; ?>
       </div>
     </div>
-  </div>
   <div class="sticky-bottom">
-    <a class="img-fluid" href="soport.php">
-      <img src="contact2.png" alt="Soporte" width="100" height="100">
-    </a>
+    <a href="soport.php" class="block"><img src="contact2.png" alt="Soporte" width="100" height="100" class="hover:scale-105 transition" /></a>
   </div>
 </div>
 </body>

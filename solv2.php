@@ -1,131 +1,81 @@
-<!-- ANGELO POLGROSSI | 04124856320 -->
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Results of process</title>
-    <link rel="shortcut icon" href="favicon.png">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-Zenh87qX5JnK2Jl0vWa8Ck2rdkQ2Bzep5IDxbcnCeuOxjzrPF/et3URy9Bv1WTRi" crossorigin="anonymous">
-</head>
-<body>
-    <div
-    style="
-      background: url('piscina.jpg') no-repeat center center fixed;
-      background-size: cover;
-    ">
-            <div class="container">
-                <div class="row min-vh-100 justify-content-center align-items-center">
-                    <div class="col-auto p-5">
-
 <?php
+require_once __DIR__ . '/src/bootstrap.php';
+require_once __DIR__ . '/src/layout.php';
+render_header('Resultado - Solvencia', 'piscina.jpg');
 
-$ci = $_REQUEST["ci"];
-$hasta = $_REQUEST["hasta"];
-$NumeroD = $_REQUEST["NumeroD"];
-$CarnetNum = $_REQUEST["CarnetNum"];
-$CarnetNum2 = $_REQUEST["CarnetNum2"];
+$ci = trim($_POST['ci'] ?? '');
+$hasta = trim($_POST['hasta'] ?? '');
+$numeroD = trim($_POST['NumeroD'] ?? '');
+$carnet = trim($_POST['CarnetNum'] ?? '');
+$carnet2 = trim($_POST['CarnetNum2'] ?? '');
 
-if ($ci == "" || $hasta == "") {
-    echo "<div class='alert alert-danger' role='alert'>
-                Es necesario que rellene todos los campos. 
-                </div>";
-            echo "<br>
-                <form action='solv.php'>
-                <button type='submit' id='buttom' class='btn btn-primary'>Intente de nuevo</button>
-
-                </form>";
-}
-else {
-
-    if ($CarnetNum == $CarnetNum2) {
-
-        $serverName = "sql5111.site4now.net"; 
-$connectionInfo = array( "Database"=>"db_aa07eb_coleabg", "UID"=>"db_aa07eb_coleabg_admin", "PWD"=>"$0p0rt3ca" ,'ReturnDatesAsStrings'=>true);
-require './conn.php'; $conn = sqlsrv_connect(DataConnect()[0], DataConnect()[1]);
-
-        $consultusers = "SELECT * FROM SOLV where CodClie = '$ci' and Status = 1";
-
-        $stmtusers = sqlsrv_query( $conn, $consultusers);
-        $rowclieusers = sqlsrv_fetch_array( $stmtusers, SQLSRV_FETCH_ASSOC);
-        $nullornotusers = is_null($rowclieusers);
-
-        if ($nullornotusers == true) {
-
-            $consultcarnet = "SELECT * FROM SOLV where CarnetNum2 = '$CarnetNum' and Status = 1";
-
-            $stmtcarnet = sqlsrv_query( $conn, $consultcarnet);
-            $rowcliecarnet = sqlsrv_fetch_array( $stmtcarnet, SQLSRV_FETCH_ASSOC);
-            $nullornotcarnet = is_null($rowcliecarnet);
-
-            if ($nullornotcarnet == true) {
-
-                $consultusers = "INSERT INTO SOLV (CodClie, hasta, Status, NumeroD, CarnetNum2)
-                VALUES ('$ci', '$hasta', 1, '$NumeroD', '$CarnetNum')";
-                
-                $stmtusers = sqlsrv_query( $conn, $consultusers);
-
-                    if ($stmtusers == false) {
-                        echo "<div class='alert alert-danger' role='alert'>
-                            Ha ocurrido un error, por favor intente de nuevo.
-                            </div>";
-                        echo "<br>
-                            <form action='solv.php'>
-                            <button type='submit' id='buttom' class='btn btn-primary'>Intente de nuevo</button>
-                            </form>";
-                    } else {
-                        echo "<div class='alert alert-success' role='alert'>
-                            Solvencia de CI: $ci, Hasta: $hasta, almacenada correctamente!
-                            </div>";
-                        echo "<br>
-                            <form action='solv.php'>
-                            <button type='submit' id='buttom' class='btn btn-primary'>Continuar</button>
-                            </form>";
-                    }
-
-            } else {
-                echo "<div class='alert alert-danger' role='alert'>
-                    Ha ocurrido un error: ya existe una persona con ese numero de Carnet.
-                    </div>";
-                echo "<br>
-                    <form action='solv.php'>
-                    <button type='submit' id='buttom' class='btn btn-primary'>Intente de nuevo</button>
-                    </form>"; 
-            }
-
-        } else {
-
-                echo "<div class='alert alert-danger' role='alert'>
-                        Ha ocurrido un error: ya existe un registro con estos datos, por favor intente de nuevo o <a href='SetCarnetNum.php'>
-                        ingrese un numero de carnet</a>.
-                        </div>";
-                    echo "<br>
-                        <form action='solv.php'>
-                        <button type='submit' id='buttom' class='btn btn-primary'>Intente de nuevo</button>
-                        </form>";  
-
-        }
-
-    } else {
-
-        echo "<div class='alert alert-danger' role='alert'>
-            El numero de carnet no coincide con su confirmacion.
-            </div>";
-        echo "<br>
-            <h2 class ='text-light text-center'>O</h2>
-            <br>
-            <form action='solv.php'>
-            <button type='submit' id='buttom' class='btn btn-primary'>Intente de nuevo</button>
-            </form>";
-
-    }
+function solv_alert($type, $msg): string {
+    $colors = [
+        'danger' => 'bg-rose-500/15 text-rose-200 border border-rose-400/30',
+        'success' => 'bg-emerald-500/15 text-emerald-200 border border-emerald-400/30',
+        'info' => 'bg-sky-500/15 text-sky-200 border border-sky-400/30'
+    ];
+    $class = $colors[$type] ?? $colors['info'];
+    return "<div class='rounded-lg px-4 py-3 text-sm font-medium {$class}'>{$msg}</div>";
 }
 ?>
+<div class="min-h-screen px-4 py-12">
+    <div class="max-w-2xl mx-auto">
+        <div class="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8 shadow space-y-6">
+            <h1 class="text-xl font-semibold text-white tracking-tight">Resultado</h1>
+            <?php
+            if ($ci === '' || $hasta === '' || $numeroD === '') {
+                    echo solv_alert('danger', 'Es necesario que rellene todos los campos obligatorios.');
+                    echo "<form action='solv.php' class='pt-4'><button type='submit' class='w-full inline-flex justify-center rounded-md bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-5 py-2.5 transition'>Intente de nuevo</button></form>";
+            } elseif ($carnet !== '' && $carnet !== $carnet2) {
+                    echo solv_alert('danger', 'El número de carnet no coincide con su confirmación.');
+                    echo "<form action='solv.php' class='pt-4'><button type='submit' class='w-full inline-flex justify-center rounded-md bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-5 py-2.5 transition'>Intente de nuevo</button></form>";
+            } else {
+                    try {
+                            $pdo = db();
+                            // Comprobar si ya existe solvencia activa exacta (CodClie + Status)
+                            $stmt = $pdo->prepare("SELECT TOP 1 1 FROM SOLV WHERE CodClie LIKE ? AND Status = 1");
+                            $stmt->execute(['%' . $ci . '%']);
+                            $yaExiste = (bool)$stmt->fetchColumn();
 
+                            if ($yaExiste) {
+                                    echo solv_alert('danger', "Ya existe un registro activo. Puede <a href='SetCarnetNum.php' class='underline decoration-dotted'>asignar un carnet</a> si falta.");
+                                    echo "<form action='solv.php' class='pt-4'><button type='submit' class='w-full inline-flex justify-center rounded-md bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-5 py-2.5 transition'>Intente de nuevo</button></form>";
+                            } else {
+                                    // Si trae carnet verificar duplicado
+                                    if ($carnet !== '') {
+                                            $stmt = $pdo->prepare("SELECT TOP 1 1 FROM SOLV WHERE CarnetNum2 = ? AND Status = 1");
+                                            $stmt->execute([$carnet]);
+                                            if ($stmt->fetchColumn()) {
+                                                    echo solv_alert('danger', 'Ya existe una persona con ese número de carnet.');
+                                                    echo "<form action='solv.php' class='pt-4'><button type='submit' class='w-full inline-flex justify-center rounded-md bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-5 py-2.5 transition'>Intente de nuevo</button></form>";
+                                                    echo "<div class='pt-4 text-xs text-neutral-300'>Sugerencia: verifique antes en Asignar Carnet.</div>";
+                                                    goto endblock;
+                                            }
+                                    }
+                                    $sql = "INSERT INTO SOLV (CodClie, hasta, Status, NumeroD, CarnetNum2) VALUES (?, ?, 1, ?, ?)";
+                                    $stmt = $pdo->prepare($sql);
+                                    $ok = $stmt->execute([$ci, $hasta, $numeroD, $carnet !== '' ? $carnet : null]);
+                                    if (!$ok) {
+                                            echo solv_alert('danger', 'Ha ocurrido un error al insertar, intente de nuevo.');
+                                            echo "<form action='solv.php' class='pt-4'><button type='submit' class='w-full inline-flex justify-center rounded-md bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-5 py-2.5 transition'>Intente de nuevo</button></form>";
+                                    } else {
+                                            echo solv_alert('success', 'Solvencia de CI: ' . h($ci) . ' hasta ' . h($hasta) . ' almacenada correctamente.');
+                                            echo "<form action='solv.php' class='pt-4'><button type='submit' class='w-full inline-flex justify-center rounded-md bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-5 py-2.5 transition'>Registrar otra</button></form>";
+                                    }
+                            }
+                    } catch (Throwable $e) {
+                            error_log('[solv2] ' . $e->getMessage());
+                            echo solv_alert('danger', 'Error interno al procesar la solicitud.');
+                    }
+            }
+            endblock:;
+            ?>
+            <div class="pt-6 flex flex-wrap gap-3">
+                <a href="index.php" class="inline-flex justify-center rounded-md bg-neutral-700/70 hover:bg-neutral-600 text-neutral-100 text-sm font-medium px-5 py-2 transition focus:outline-none focus:ring focus:ring-neutral-400/40">Inicio</a>
+                <a href="SetCarnetNum.php" class="inline-flex justify-center rounded-md bg-sky-600 hover:bg-sky-500 text-white text-sm font-medium px-5 py-2 transition focus:outline-none focus:ring focus:ring-sky-400/40">Asignar Carnet</a>
+            </div>
+        </div>
+    </div>
 </div>
-</div>
-</div>
-</div>
-</body>
-</html>
+<?php render_footer(); ?>

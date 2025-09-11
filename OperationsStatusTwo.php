@@ -1,92 +1,54 @@
-<!-- ANGELO POLGROSSI | 04124856320 -->
-<!DOCTYPE html>
-<html lang="es">
-<html>
-    <head>
-        <meta charset="UTF-8">
-        <meta http-equiv="X-UA-Compatible" content="ie=edge">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Operations with Status Two</title> <!--title of page-->
-        <link rel="shortcut icon" href="favicon.png">
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-Zenh87qX5JnK2Jl0vWa8Ck2rdkQ2Bzep5IDxbcnCeuOxjzrPF/et3URy9Bv1WTRi" crossorigin="anonymous">
+<?php
+require_once __DIR__ . '/src/layout.php';
+require_auth();
+render_header('Operaciones con Status = 2', 'piscina.jpg');
 
-    </head>
+$pdo = DataConnect();
 
-    <body>
-        <div
-            style="
-            background: url('piscina.jpg') no-repeat center center fixed;
-            background-size: cover;
-            ">
-                <div class="container">
-                    <div class="row min-vh-100 justify-content-center align-items-center">
-                        <div class="col-auto p-5">
-                        
-                            <?php
+$st = $pdo->query("SELECT CodClie, FechaE, NumeroD, Solved, CarnetNum2, hasta FROM SOLV WHERE Status = 2 AND (Solved = 0 OR Solved IS NULL)");
+$rows = $st->fetchAll(PDO::FETCH_ASSOC);
+?>
 
-$serverName = "sql5111.site4now.net"; 
-$connectionInfo = array( "Database"=>"db_aa07eb_coleabg", "UID"=>"db_aa07eb_coleabg_admin", "PWD"=>"$0p0rt3ca" ,'ReturnDatesAsStrings'=>true);
-require './conn.php'; $conn = sqlsrv_connect(DataConnect()[0], DataConnect()[1]);
-
-                                $consultusers = "SELECT * FROM SOLV where Status = 2 and (Solved = 0 OR Solved IS NULL)";
-
-                                $stmtusers = sqlsrv_query( $conn, $consultusers);
-                                $rowclieusers = sqlsrv_fetch_array( $stmtusers, SQLSRV_FETCH_ASSOC);
-
-                                $nullornotusers = is_null($rowclieusers);
-
-                                $OrdenC = "";
-                                $Note = "";
-
-                                if ($nullornotusers == false) 
-                                    {   
-                                        $stmt1 = sqlsrv_query( $conn, $consultusers);
-                                        while( $rowclieusers = sqlsrv_fetch_array( $stmt1, SQLSRV_FETCH_ASSOC) ) 
-                                        {   
-                                            $OrdenC = "not found";
-                                            $Note = "not found";
-
-                                            $consult = "SELECT * FROM SAFACT where NumeroD = '$rowclieusers[NumeroD]'";
-
-                                            $stmt = sqlsrv_query( $conn, $consult);
-                                            $rowclie = sqlsrv_fetch_array( $stmt, SQLSRV_FETCH_ASSOC);
-
-                                            $nullornot = is_null($rowclie);
-
-                                            if ($nullornot == false) 
-                                                {   
-                                                    $stmt2 = sqlsrv_query( $conn, $consult);
-                                                    while( $rowclie = sqlsrv_fetch_array( $stmt2, SQLSRV_FETCH_ASSOC) ) 
-                                                    {
-                                                        $OrdenC = $rowclie['OrdenC'];
-                                                        $Note = $rowclie['Notas1'] . " " . $rowclie['Notas2'] . " " . $rowclie['Notas3'];
-
-                                                    }
-                                                }
-
-                                            echo "<div class='alert alert-warning' role='alert'>Ci: " .$rowclieusers['CodClie']. "; Fecha: "
-                                            . $rowclieusers['FechaE'] . "; Numero de Factura: " . $rowclieusers['NumeroD'] . "; OrdenC: " . $OrdenC . 
-                                            "; Nota: " . $Note . "; Resuelto: " . $rowclieusers['Solved'] . "; CarnetNum: " . $rowclieusers['CarnetNum2']. 
-                                            "; Hasta: " . $rowclieusers['hasta'];
-
-                                            echo "<br><br><a class='btn btn-primary' href='DeleteFailed.php?NumeroD=$rowclieusers[NumeroD]' role='button'>Solved</a></div>";
-
-                                        }
-                                    }
-                                else
-                                    {
-                                        echo "<div class='alert alert-danger' role='alert'>
-                                        No found operations with Status = 2.
-                                        </div>";
-                                    }
-
-                            ?>
-
-                            <br><a class='btn btn-success' href='HomeFailed.php' role='button'>Return</a>
-            
+<div class="container mx-auto min-h-screen py-10">
+    <div class="max-w-5xl mx-auto p-6 bg-slate-900/70 rounded-lg border border-slate-700/50">
+        <h1 class="text-2xl text-white font-semibold mb-6">Operaciones con Status = 2 (no resueltas)</h1>
+        <?php if (!$rows): ?>
+            <div class="rounded-md px-4 py-3 text-sm bg-emerald-500/15 text-emerald-200 border border-emerald-400/30">No se encontraron operaciones.</div>
+        <?php else: ?>
+            <div class="space-y-4">
+                <?php foreach ($rows as $r): ?>
+                    <?php
+                        $ordenC = 'not found';
+                        $nota = 'not found';
+                        $st2 = $pdo->prepare("SELECT TOP 1 OrdenC, Notas1, Notas2, Notas3, Notas4, Notas5, Notas6, Notas7 FROM SAFACT WHERE NumeroD = ?");
+                        $st2->execute([$r['NumeroD']]);
+                        if ($o = $st2->fetch(PDO::FETCH_ASSOC)) {
+                                $ordenC = (string)($o['OrdenC'] ?? '');
+                                $nota = trim(($o['Notas1'] ?? '') . ' ' . ($o['Notas2'] ?? '') . ' ' . ($o['Notas3'] ?? '') . ' ' . ($o['Notas4'] ?? '') . ' ' . ($o['Notas5'] ?? '') . ' ' . ($o['Notas6'] ?? '') . ' ' . ($o['Notas7'] ?? ''));
+                                if ($nota === '') { $nota = 'not found'; }
+                        }
+                    ?>
+                    <div class="rounded-md px-4 py-3 text-sm bg-amber-500/15 text-amber-200 border border-amber-400/30">
+                        <div><span class="text-white/60">CI:</span> <?= h($r['CodClie']) ?></div>
+                        <div><span class="text-white/60">Fecha:</span> <?= h($r['FechaE']) ?></div>
+                        <div><span class="text-white/60">Factura:</span> <?= h($r['NumeroD']) ?></div>
+                        <div><span class="text-white/60">OrdenC:</span> <?= h($ordenC) ?></div>
+                        <div><span class="text-white/60">Resuelto:</span> <?= h($r['Solved']) ?></div>
+                        <div><span class="text-white/60">CarnetNum:</span> <?= h($r['CarnetNum2']) ?></div>
+                        <div><span class="text-white/60">Hasta:</span> <?= h($r['hasta']) ?></div>
+                        <div class="mt-2 text-white/80"><span class="text-white/60">Nota:</span> <?= h($nota) ?></div>
+                        <div class="mt-3">
+                            <a class="inline-block bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-3 py-1 rounded" href="DeleteFailed.php?NumeroD=<?= h(urlencode($r['NumeroD'])) ?>">Marcar como resuelto</a>
                         </div>
                     </div>
-                </div>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+
+        <div class="mt-6">
+            <a class="inline-block bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-4 py-2 rounded" href="HomeFailed.php">Volver</a>
         </div>
-    </body>
-</html>
+    </div>
+</div>
+
+<?php render_footer(); ?>

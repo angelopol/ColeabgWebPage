@@ -9,34 +9,29 @@ require_once __DIR__ . '/src/nav.php';
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Colegio de Abogados del Estado Carabobo</title>
   <link rel="shortcut icon" href="favicon.png">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = { theme: { extend: { colors: { brand: '#0ea5e9' } } } };
+  </script>
+  <style>
+    .sticky-bottom { position: fixed; bottom: 1rem; right: 1rem; }
+  </style>
 </head>
 <body>
 <div style="background: url('entrada.jpg') no-repeat center center fixed;background-size:cover;">
   <?php render_nav(); ?>
-  <div class="container">
-    <div class="row vh-100 justify-content-center align-items-center">
-      <div class="col-auto p-5">
-        <h1 class="display-1 text-white text-center"><strong>COLEGIO DE ABOGADOS DEL</strong></h1>
-        <h1 class="display-1 text-white text-center"><strong>ESTADO CARABOBO</strong></h1>
-      </div>
-    </div>
+  <div class="w-full min-h-screen flex flex-col items-center justify-center backdrop-brightness-75 text-center px-4">
+      <h1 class="text-4xl md:text-6xl lg:text-7xl font-extrabold text-white tracking-tight">COLEGIO DE ABOGADOS DEL</h1>
+      <h1 class="text-4xl md:text-6xl lg:text-7xl font-extrabold text-white tracking-tight mt-2">ESTADO CARABOBO</h1>
+      <p class="mt-8 max-w-xl text-slate-200 text-lg">Portal institucional para verificación de solvencias y operaciones.</p>
   </div>
   <div class="sticky-bottom">
-    <div class="container-fluid">
-      <div class="row">
-        <div class="col-md-4">
-          <div class="alert alert-light alert-dismissible fade show" role="alert">
-            <strong>¿Necesitas ayuda?, presiona el botón de abajo para contactar con el soporte</strong>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-          </div>
-        </div>
+      <div class="bg-white/90 shadow rounded p-4 mb-2 max-w-sm">
+        <p class="text-sm text-slate-700 font-semibold">¿Necesitas ayuda? Pulsa el botón para contactar soporte.</p>
       </div>
-    </div>
-    <a class="img-fluid" href="soport.php">
-      <img src="contact2.png" alt="Soporte" width="100" height="100">
-    </a>
+      <a href="soport.php" class="block">
+        <img src="contact2.png" alt="Soporte" width="100" height="100" class="hover:scale-105 transition" />
+      </a>
   </div>
 </div>
 </body>

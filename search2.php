@@ -2,35 +2,31 @@
 require_once __DIR__ . '/src/layout.php';
 render_header('Verifica las operaciones', 'salonestudiosjuridicos.jpg');
 ?>
-<div class="container">
-    <div class="row min-vh-100 justify-content-center align-items-center">
-        <div class="col-auto p-5">
-            <form action="system2.php" method="post">
-                <div class="form-floating mb-3">
-                    <input type="number" name="input" max="999999" class="form-control" required>
-                    <label for="floatingInput">Inpre</label>
-                </div>
-                <div class="form-floating mb-3">
-                    <input type="number" name="input2" class="form-control" min="2000" max="2030">
-                    <label for="floatingInput"><span class="text-secondary">Año (opcional)</span></label>
-                </div>
-                <input type="submit" class="btn btn-success w-100" value="Buscar">
-            </form>
-            <br>
+<div class="w-full flex justify-center items-center min-h-screen px-4">
+    <div class="w-full max-w-md bg-slate-900/70 backdrop-blur rounded-xl p-8 shadow-lg space-y-8">
+        <form action="system2.php" method="post" class="space-y-5">
+            <div>
+                <label class="block text-sm font-medium text-slate-200 mb-1">Inpre</label>
+                <input type="number" name="input" max="999999" required class="w-full rounded-md bg-slate-800/70 border border-slate-600 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/40 text-slate-100 px-3 py-2 text-sm outline-none" />
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-200 mb-1">Año (opcional)</label>
+                <input type="number" name="input2" min="2000" max="2030" class="w-full rounded-md bg-slate-800/70 border border-slate-600 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/40 text-slate-100 px-3 py-2 text-sm outline-none" />
+            </div>
+            <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-sm rounded-md px-4 py-2 transition">Buscar</button>
+        </form>
+        <div class="flex flex-col gap-3">
             <form action="search.php">
-                <input type="submit" class="btn btn-outline-success w-100" value="Buscar por cédula">
+                <button class="w-full border border-emerald-600 text-emerald-400 hover:bg-emerald-600 hover:text-white font-medium text-sm rounded-md px-4 py-2 transition">Buscar por Cédula</button>
             </form>
-            <br>
-            <form action="index.php">
-                <label for="buttom" class="form-label"><span class="text-light">Ej: 211210, 2023</span></label>
-                <button type="submit" id="buttom" class="btn btn-warning">Salir</button>
+            <form action="index.php" class="space-y-2">
+                <p class="text-xs text-slate-300">Ej: 211210, 2023</p>
+                <button type="submit" class="w-full bg-amber-500 hover:bg-amber-400 text-white font-medium text-sm rounded-md px-4 py-2 transition">Salir</button>
             </form>
         </div>
     </div>
-</div>
-<div class="sticky-bottom">
-    <a class="img-fluid" href="soport.php">
-        <img src="contact2.png" alt="Soporte" width="100" height="100">
-    </a>
+    <div class="sticky-bottom">
+        <a href="soport.php" class="block"><img src="contact2.png" width="100" height="100" class="hover:scale-105 transition" alt="Soporte" /></a>
+    </div>
 </div>
 <?php render_footer(); ?>

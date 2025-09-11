@@ -1,57 +1,39 @@
-<!-- ANGELO POLGROSSI | 04124856320 -->
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Ingresar</title>
-    <link rel="shortcut icon" href="favicon.png">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-Zenh87qX5JnK2Jl0vWa8Ck2rdkQ2Bzep5IDxbcnCeuOxjzrPF/et3URy9Bv1WTRi" crossorigin="anonymous">
-    
-</head>
-<body>
-    <div style=" background: url('domo.jpg') no-repeat center center fixed;
-      background-size: cover; ">
-            <div class="container">
-                <div class="row min-vh-100 justify-content-center align-items-center">
-                    <div class="col-auto p-5">
-                        <div class="mb-3">
-                        <p class='h5 text-light'>Monto:</p>
-                        <br>
-                        <p class='h5 text-light'>Periodo del pago:</p>
-                        <br>
-                        <p class='h5 text-light'>Datos de pago:</p>
-                        <br>
-                        <form action="paid2.php" method="post" enctype="multipart/form-data">
+<?php
+require_once __DIR__ . '/src/layout.php';
+require_auth();
+render_header('Registrar Pago', 'domo.jpg');
+?>
 
-                        <p class='h5 text-light'>Numero de referencia:</p>
-
-                        <input type="number" name="ref" class="form-control" required>
-                        <br> 
-
-                        <p class='h5 text-light'>Captura comprobante del pago:</p>
-
-                        <input type="file" class="form-control" id="formFile" name="fileToUpload" id="fileToUpload" required>
-                        <br>
-
-                        <p class='h5 text-light'>Nota:</p>
-
-                        <textarea class="form-control" name = "nota"></textarea>
-
-                        <br>
-
-                        <input type="submit" value="Enviar" class = "btn btn-success w-100" name="submit">
-                        </form>
-                        </div>
-                    </div>
-                </div>
+<div class="container mx-auto min-h-screen py-10">
+    <div class="max-w-xl mx-auto p-6 bg-slate-900/70 rounded-lg border border-slate-700/50">
+        <h1 class="text-2xl text-white font-semibold mb-6">Datos del pago</h1>
+        <form action="paid2.php" method="post" enctype="multipart/form-data" class="space-y-4">
+            <?php require_once __DIR__ . '/src/bootstrap.php'; echo csrf_input(); ?>
+            <div>
+                <label class="block text-slate-200 mb-1">Monto</label>
+                <input type="text" class="w-full rounded bg-slate-800/70 border border-slate-700 px-3 py-2 text-white" name="monto" placeholder="Ej: 15.00" />
             </div>
-    <div class="sticky-bottom">
-    <a class="img-fluid" href="soport.php">
-    <img src="contact2.png" alt="Soporte" width="100" height="100">
-    </a>
+            <div>
+                <label class="block text-slate-200 mb-1">Periodo del pago</label>
+                <input type="text" class="w-full rounded bg-slate-800/70 border border-slate-700 px-3 py-2 text-white" name="periodo" placeholder="Ej: 2025-01" />
+            </div>
+            <div>
+                <label class="block text-slate-200 mb-1">Número de referencia</label>
+                <input type="number" class="w-full rounded bg-slate-800/70 border border-slate-700 px-3 py-2 text-white" name="ref" required />
+            </div>
+            <div>
+                <label class="block text-slate-200 mb-1">Comprobante del pago (captura)</label>
+                <input type="file" class="w-full rounded bg-slate-800/70 border border-slate-700 px-3 py-2 text-white" name="fileToUpload" required />
+            </div>
+            <div>
+                <label class="block text-slate-200 mb-1">Nota</label>
+                <textarea class="w-full rounded bg-slate-800/70 border border-slate-700 px-3 py-2 text-white" name="nota" rows="3" placeholder="Información adicional"></textarea>
+            </div>
+            <div class="pt-2">
+                <button type="submit" class="bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-4 py-2 rounded w-full">Enviar</button>
+            </div>
+        </form>
     </div>
 </div>
-</body>
-</html>
+
+<?php render_footer(); ?>

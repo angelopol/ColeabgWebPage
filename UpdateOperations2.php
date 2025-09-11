@@ -1,131 +1,75 @@
-<!-- ANGELO POLGROSSI | 04124856320 -->
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Results of process</title>
-    <link rel="shortcut icon" href="favicon.png">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-Zenh87qX5JnK2Jl0vWa8Ck2rdkQ2Bzep5IDxbcnCeuOxjzrPF/et3URy9Bv1WTRi" crossorigin="anonymous">
-</head>
-<body>
-    <div
-    style="
-      background: url('piscina.jpg') no-repeat center center fixed;
-      background-size: cover;
-    ">
-            <div class="container">
-                <div class="row min-vh-100 justify-content-center align-items-center">
-                    <div class="col-auto p-5">
-
 <?php
+require_once __DIR__ . '/src/bootstrap.php';
+require_once __DIR__ . '/src/layout.php';
+render_header('Resultado - Actualizar Solvencia', 'piscina.jpg');
 
-$ci = $_REQUEST["ci"];
-$hasta = $_REQUEST["hasta"];
-$FechaE = $_REQUEST["FechaE"];
-$NumeroD = $_REQUEST["NumeroD"];
+$ci = trim($_POST['ci'] ?? '');
+$hasta = trim($_POST['hasta'] ?? '');
+$fechaE = trim($_POST['FechaE'] ?? '');
+$numeroD = trim($_POST['NumeroD'] ?? '');
 
-if ($ci == "" || $hasta == "") {
-    echo "<div class='alert alert-danger' role='alert'>
-                Es necesario que rellene todos los campos. 
-                </div>";
-            echo "<br>
-                <form action='solv.php'>
-                <button type='submit' id='buttom' class='btn btn-primary'>Intente de nuevo</button>
-
-                </form>";
-}
-else {
-
-    $serverName = "sql5111.site4now.net"; 
-$connectionInfo = array( "Database"=>"db_aa07eb_coleabg", "UID"=>"db_aa07eb_coleabg_admin", "PWD"=>"$0p0rt3ca" ,'ReturnDatesAsStrings'=>true);
-require './conn.php'; $conn = sqlsrv_connect(DataConnect()[0], DataConnect()[1]);
-
-    $consultusers = "SELECT * FROM SOLV where CodClie = '$ci' and Status = 1";
-
-    $stmtusers = sqlsrv_query( $conn, $consultusers);
-    $rowclieusers = sqlsrv_fetch_array( $stmtusers, SQLSRV_FETCH_ASSOC);
-    $nullornotusers = is_null($rowclieusers);
-
-    if ($nullornotusers == true) {
-
-        echo "<div class='alert alert-danger' role='alert'>
-            Ha ocurrido un error: no existe ningun registro con esos datos, por lo tanto no es posile completar el proceso de actualizacion, por favor intente de nuevo.
-            </div>";
-        echo "<br>
-            <form action='solv.php'>
-            <button type='submit' id='buttom' class='btn btn-primary'>Intente de nuevo</button>
-            </form>";
-
-    } else {
-
-        while ($row = sqlsrv_fetch_array( $stmtusers, SQLSRV_FETCH_ASSOC)) 
-        {
-            $DbFechaE = $row['FechaE'];
-            $DbNumeroD = $row['NumeroD'];
-        }
-
-        if ($DbFechaE > $FinallyFechaE) {
-
-            echo "<div class='alert alert-danger' role='alert'>
-                Ha ocurrido un error: la fecha de facturacion de la factura ingresada es inferior a la fecha de facturacion de la 
-                ultima factura registrada, por favor intente de nuevo.
-                </div>";
-            echo "<br>
-                <form action='solv.php'>
-                <button type='submit' id='buttom' class='btn btn-primary'>Intente de nuevo</button>
-                </form>";
-
-        } else 
-        {
-            if ($DbNumeroD == $NumeroD) 
-            {
-                echo "<div class='alert alert-danger' role='alert'>
-                    Ha ocurrido un error: la fecha de facturacion de la factura ingresada es inferior a la fecha de facturacion de la 
-                    ultima factura registrada, por favor intente de nuevo.
-                    </div>";
-                echo "<br>
-                    <form action='solv.php'>
-                    <button type='submit' id='buttom' class='btn btn-primary'>Intente de nuevo</button>
-                    </form>";
-        } else {
-            
-            $consultcreate= "UPDATE ASSIST set fecha_salida = '$fecha_salida' where email = '$_COOKIE[user]' and fecha = '$fecha'";
-
-            $stmtcreate = sqlsrv_query( $conn, $consultcreate);
-
-            if ($stmtcreate == false) {
-                echo "<div class='alert alert-danger' role='alert'>
-                    Ha ocurrido un error, por favor intente de nuevo!
-                    </div>";
-                echo "<br>
-                    <form action='ingre_workers.php'>
-                    <button type='submit' id='buttom' class='btn btn-primary'>Intente de nuevo</button>
-
-                    </form>";
-
-            } else {
-
-                echo "<div class='alert alert-success' role='alert'>
-                    Su asistencia de salida ha sido registrada de forma exitosa!
-                    </div>";
-                echo "</form>
-                    <br>
-                    <form action='ingre_workers.php'>
-                    <button type='submit' id='buttom' class='btn btn-warning'>Salir</button>
-                    </form>";
-            }
-        }
-    }
-
-    }
+function upd_alert($type, $msg): string {
+    $colors = [
+        'danger' => 'bg-rose-500/15 text-rose-200 border border-rose-400/30',
+        'success' => 'bg-emerald-500/15 text-emerald-200 border border-emerald-400/30',
+        'info' => 'bg-sky-500/15 text-sky-200 border border-sky-400/30'
+    ];
+    $class = $colors[$type] ?? $colors['info'];
+    return "<div class='rounded-lg px-4 py-3 text-sm font-medium {$class}'>{$msg}</div>";
 }
 ?>
-
+<div class="min-h-screen px-4 py-12">
+    <div class="max-w-2xl mx-auto">
+        <div class="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8 shadow space-y-6">
+            <h1 class="text-xl font-semibold text-white tracking-tight">Resultado</h1>
+            <?php
+            if ($ci === '' || $hasta === '' || $fechaE === '' || $numeroD === '') {
+                    echo upd_alert('danger', 'Es necesario que rellene todos los campos.');
+                    echo "<form action='UpdateOperations.php' class='pt-4'><button type='submit' class='w-full inline-flex justify-center rounded-md bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-5 py-2.5 transition'>Volver</button></form>";
+            } else {
+                    try {
+                            $pdo = db();
+                            // Obtener última solvencia existente
+                            $stmt = $pdo->prepare("SELECT TOP 1 FechaE, NumeroD FROM SOLV WHERE CodClie LIKE ? AND Status = 1 ORDER BY FechaE DESC");
+                            $stmt->execute(['%' . $ci . '%']);
+                            $ultima = $stmt->fetch(PDO::FETCH_ASSOC);
+                            if (!$ultima) {
+                                    echo upd_alert('danger', 'No existe solvencia inicial, cree una primero.');
+                                    echo "<form action='solv.php' class='pt-4'><button type='submit' class='w-full inline-flex justify-center rounded-md bg-sky-600 hover:bg-sky-500 text-white font-medium px-5 py-2.5 transition'>Crear Solvencia</button></form>";
+                            } else {
+                                    $fechaUltima = $ultima['FechaE'];
+                                    $numeroDUltimo = $ultima['NumeroD'];
+                                    // Validar fecha (asumiendo formato comparable lexicográficamente YYYY-MM-DD)
+                                    if ($fechaUltima !== null && $fechaUltima > $fechaE) {
+                                            echo upd_alert('danger', 'La fecha ingresada es anterior a la última registrada.');
+                                            echo "<form action='UpdateOperations.php' class='pt-4'><button type='submit' class='w-full inline-flex justify-center rounded-md bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-5 py-2.5 transition'>Volver</button></form>";
+                                    } elseif ($numeroDUltimo == $numeroD) {
+                                            echo upd_alert('danger', 'El número de factura ya está registrado.');
+                                            echo "<form action='UpdateOperations.php' class='pt-4'><button type='submit' class='w-full inline-flex justify-center rounded-md bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-5 py-2.5 transition'>Volver</button></form>";
+                                    } else {
+                                            // Insertar nuevo registro como nueva solvencia (manteniendo patrón original de crecimiento)
+                                            $ins = $pdo->prepare("INSERT INTO SOLV (CodClie, hasta, Status, NumeroD, CarnetNum2, FechaE) VALUES (?, ?, 1, ?, NULL, ?)");
+                                            $ok = $ins->execute([$ci, $hasta, $numeroD, $fechaE]);
+                                            if (!$ok) {
+                                                    echo upd_alert('danger', 'Error al registrar la nueva solvencia.');
+                                                    echo "<form action='UpdateOperations.php' class='pt-4'><button type='submit' class='w-full inline-flex justify-center rounded-md bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-5 py-2.5 transition'>Volver</button></form>";
+                                            } else {
+                                                    echo upd_alert('success', 'Nueva solvencia registrada correctamente.');
+                                                    echo "<form action='UpdateOperations.php' class='pt-4'><button type='submit' class='w-full inline-flex justify-center rounded-md bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-5 py-2.5 transition'>Registrar otra</button></form>";
+                                            }
+                                    }
+                            }
+                    } catch (Throwable $e) {
+                            error_log('[UpdateOperations2] ' . $e->getMessage());
+                            echo upd_alert('danger', 'Error interno al procesar la solicitud.');
+                    }
+            }
+            ?>
+            <div class="pt-6 flex flex-wrap gap-3">
+                <a href="index.php" class="inline-flex justify-center rounded-md bg-neutral-700/70 hover:bg-neutral-600 text-neutral-100 text-sm font-medium px-5 py-2 transition focus:outline-none focus:ring focus:ring-neutral-400/40">Inicio</a>
+                <a href="solv.php" class="inline-flex justify-center rounded-md bg-sky-600 hover:bg-sky-500 text-white text-sm font-medium px-5 py-2 transition focus:outline-none focus:ring focus:ring-sky-400/40">Crear Solvencia</a>
+            </div>
+        </div>
+    </div>
 </div>
-</div>
-</div>
-</div>
-</body>
-</html>
+<?php render_footer(); ?>

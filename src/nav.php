@@ -11,30 +11,32 @@ function render_nav(): void {
     }
     $_SESSION['LAST_ACTIVITY'] = time();
     ?>
-    <nav class="navbar navbar-expand-lg fixed-top bg-light">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="index.php">
-                <img src="logo.png" alt="logo" width="30" height="30">
-            </a>
-            <div class="btn-group me-2">
-                <a href="search.php" class="btn btn-outline-success active">Buscar solvencia</a>
+        <nav class="fixed top-0 inset-x-0 z-40 backdrop-blur bg-white/70 border-b border-slate-200/70">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex h-14 items-center justify-between">
+                <a href="index.php" class="flex items-center gap-2 font-semibold text-slate-700">
+                    <img src="logo.png" alt="logo" class="h-8 w-8" />
+                    <span class="hidden sm:inline">Colegio</span>
+                </a>
+                <div class="flex items-center gap-6">
+                    <a href="search.php" class="text-sm font-medium text-emerald-700 hover:text-emerald-600">Buscar solvencia</a>
+                    <div class="relative" x-data="{open:false}">
+                        <button type="button" onclick="this.nextElementSibling.classList.toggle('hidden')" class="inline-flex items-center gap-1 text-sm font-medium text-slate-600 hover:text-slate-800 focus:outline-none">
+                            <span>Menú</span>
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                        </button>
+                        <div class="hidden absolute right-0 mt-2 w-40 rounded-md shadow-lg bg-white ring-1 ring-slate-900/10 py-1 text-sm">
+                            <?php if (!$logged): ?>
+                                <a href="ingre.php" class="block px-3 py-2 hover:bg-slate-50">Iniciar sesión</a>
+                                <a href="regis.php" class="block px-3 py-2 hover:bg-slate-50">Registrarse</a>
+                            <?php else: ?>
+                                <a href="ingre.php" class="block px-3 py-2 hover:bg-slate-50">Ingresar</a>
+                                <a href="logout.php" class="block px-3 py-2 hover:bg-slate-50">Cerrar sesión</a>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navBar" aria-controls="navBar" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navBar">
-                <ul class="navbar-nav ms-auto">
-                    <?php if (!$logged): ?>
-                        <li class="nav-item"><a class="nav-link" href="ingre.php">Iniciar sesión</a></li>
-                        <li class="nav-item"><a class="nav-link" href="regis.php">Registrarse</a></li>
-                    <?php else: ?>
-                        <li class="nav-item"><a class="nav-link" href="ingre.php">Ingresar</a></li>
-                        <li class="nav-item"><a class="nav-link" href="logout.php">Cerrar sesión</a></li>
-                    <?php endif; ?>
-                </ul>
-            </div>
-        </div>
-    </nav>
+        </nav>
     <?php
 }
 
@@ -54,29 +56,24 @@ function render_auth_nav(string $title = 'Menu'): void {
         }
     } catch (Throwable $e) { /* ignore */ }
     ?>
-    <nav class="navbar fixed-top" style="background-color: rgba(255,255,255,0);">
-        <div class="container-fluid">
-            <a class="navbar-brand"><small class='text-light fs-6'><?= h($display) ?></small></a>
-            <button class="navbar-toggler" type="button" style="background-color:#FFFFFF;" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNavbar" aria-controls="offcanvasNavbar">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasNavbar" aria-labelledby="offcanvasNavbarLabel">
-                <div class="offcanvas-header">
-                    <h5 class="offcanvas-title" id="offcanvasNavbarLabel"><?= h($title) ?></h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-                </div>
-                <div class="offcanvas-body">
-                    <ul class="navbar-nav justify-content-end flex-grow-1 pe-3">
-                        <li class="nav-item"><a class="nav-link" href="pageuser.php">Inicio</a></li>
-                        <li class="nav-item"><a class="nav-link" href="recpass.php">Cambiar contraseña</a></li>
-                        <li class="nav-item"><a class="nav-link" href="recemail.php">Cambiar email</a></li>
-                        <li class="nav-item"><a class="nav-link" href="delete.php">Eliminar usuario</a></li>
-                        <li class="nav-item"><a class="nav-link" href="datedb.php">Datos de registro</a></li>
-                        <li class="nav-item"><a class="nav-link" href="logout.php">Cerrar sesión</a></li>
-                    </ul>
+        <nav class="fixed top-0 inset-x-0 z-40 bg-gradient-to-b from-slate-900/60 to-transparent">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex h-14 items-center justify-between">
+                <span class="text-slate-100 text-sm font-semibold truncate max-w-xs"><?= h($display) ?></span>
+                <div class="relative">
+                    <button type="button" onclick="this.nextElementSibling.classList.toggle('hidden')" class="inline-flex items-center gap-1 text-xs font-medium bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded">
+                        <span><?= h($title) ?></span>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                    </button>
+                    <div class="hidden absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-slate-900/95 backdrop-blur ring-1 ring-slate-700 py-2 text-sm text-slate-100">
+                        <a href="pageuser.php" class="block px-4 py-2 hover:bg-slate-700/60">Inicio</a>
+                        <a href="recpass.php" class="block px-4 py-2 hover:bg-slate-700/60">Cambiar contraseña</a>
+                        <a href="recemail.php" class="block px-4 py-2 hover:bg-slate-700/60">Cambiar email</a>
+                        <a href="delete.php" class="block px-4 py-2 hover:bg-slate-700/60">Eliminar usuario</a>
+                        <a href="datedb.php" class="block px-4 py-2 hover:bg-slate-700/60">Datos de registro</a>
+                        <a href="logout.php" class="block px-4 py-2 hover:bg-slate-700/60">Cerrar sesión</a>
+                    </div>
                 </div>
             </div>
-        </div>
-    </nav>
+        </nav>
     <?php
 }

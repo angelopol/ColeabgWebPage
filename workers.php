@@ -1,59 +1,34 @@
 <?php
+require_once __DIR__ . '/src/bootstrap.php';
+require_once __DIR__ . '/src/layout.php';
 session_start();
-    
-    if( isset( $_COOKIE['user']) == false )
-    {
-        header("Location: ingre_workers.php");
-        
-                    exit();
-    }   
-
-    session_start();
-   
-    $_SESSION["assist"] = 1;
+if (!isset($_COOKIE['user'])) { header('Location: ingre_workers.php'); exit; }
+$_SESSION['assist'] = 1;
+render_header('Asistencia', 'domo.jpg');
+$username = h($_COOKIE['user']);
 ?>
-
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Ingresar</title>
-    <link rel="shortcut icon" href="favicon.png">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-Zenh87qX5JnK2Jl0vWa8Ck2rdkQ2Bzep5IDxbcnCeuOxjzrPF/et3URy9Bv1WTRi" crossorigin="anonymous">
-    
-</head>
-<body data-temp="<?= $temp = $_COOKIE['user']?>">
-    <div style=" background: url('domo.jpg') no-repeat center center fixed;
-      background-size: cover; ">
-            <div class="container">
-                <div class="row min-vh-100 justify-content-center align-items-center">
-                    <div class="col-auto">
-                    <p class='h1 text-light text-center'>Marca tu asistencia</p>
-
-                    <?php echo
-                    "<p class='h1 text-light text-center'>$_COOKIE[user]</p>";
-                    ?>
-					<br>
-						<div class="d-grid gap-2 col-6 mx-auto">
-						<button class="btn btn-danger btn-lg" type="send" id="btnIniciar" >Entrada</button>
-						<br>
-						<button class="btn btn-success btn-lg" type="button" id="btnDetener" >Salida</button>
-                        <p class="text-light text-center" id="message"></p>
-						</div>
-					</div>
-				</div>
-			</div>
-            <nav class="navbar sticky-bottom bg-body-tertiary">
-  <div class="container-fluid">
-  <p class="text-light" id="latitud"></p>
-        <p class="text-light" id="longitud"></p>
-  </div>
-</nav>
-	</div>
-	<script src="workers.js">
-	</script>
-</body>
-
-</html>
+<div class="min-h-screen px-4 py-12" data-user="<?= $username ?>">
+    <div class="max-w-xl mx-auto space-y-10">
+        <div class="text-center space-y-2">
+            <h1 class="text-3xl font-semibold text-white tracking-tight">Marca tu asistencia</h1>
+            <p class="text-xl font-mono text-indigo-200"><?= $username ?></p>
+        </div>
+        <div class="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8 shadow space-y-6">
+            <div class="grid sm:grid-cols-2 gap-6">
+                <button id="btnIniciar" type="button" class="inline-flex justify-center items-center rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-6 py-4 text-lg transition focus:outline-none focus:ring-2 focus:ring-emerald-400/50">
+                    Entrada
+                </button>
+                <button id="btnDetener" type="button" class="inline-flex justify-center items-center rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-medium px-6 py-4 text-lg transition focus:outline-none focus:ring-2 focus:ring-rose-400/50">
+                    Salida
+                </button>
+            </div>
+            <p id="message" class="text-center text-sm text-neutral-200 min-h-[1.5rem]"></p>
+            <div class="pt-4 grid sm:grid-cols-2 gap-4 text-sm">
+                <p id="latitud" class="text-neutral-300"></p>
+                <p id="longitud" class="text-neutral-300"></p>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="workers.js"></script>
+<?php render_footer(); ?>

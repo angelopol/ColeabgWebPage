@@ -1,70 +1,46 @@
-<!-- ANGELO POLGROSSI | 04124856320 -->
-<!DOCTYPE html>
-<html lang="es">
-<html>
-    <head>
-        <meta charset="UTF-8">
-        <meta http-equiv="X-UA-Compatible" content="ie=edge">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Insert Data</title> <!--title of page-->
-        <link rel="shortcut icon" href="favicon.png">
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-Zenh87qX5JnK2Jl0vWa8Ck2rdkQ2Bzep5IDxbcnCeuOxjzrPF/et3URy9Bv1WTRi" crossorigin="anonymous">
-
-    </head>
-
-    <body>
-    <div
-    style="
-      background: url('piscina.jpg') no-repeat center center fixed;
-      background-size: cover;
-    ">
-            <div class="container">
-                <div class="row min-vh-100 justify-content-center align-items-center">
-                    <div class="col-auto p-5">
-                    <h1 class="text-light text-center">Insert Data</h1>
-                    <br>
-        <form action="solv2.php" method="post">
-        <br>
-                <div class="form-floating mb-3"> 
-            
-            <input type="text"  name="ci" class="form-control" placeholder="name@example.com" required> 
-            <label for="floatingInput">Cedula</label>
+<?php
+require_once __DIR__ . '/src/bootstrap.php';
+require_once __DIR__ . '/src/layout.php';
+render_header('Registrar Solvencia', 'piscina.jpg');
+?>
+<div class="min-h-screen px-4 py-12">
+    <div class="max-w-2xl mx-auto">
+        <div class="mb-8 text-center">
+            <h1 class="text-2xl md:text-3xl font-semibold text-white tracking-tight">Registrar Solvencia</h1>
+            <p class="text-neutral-300 text-sm mt-2">Crear un registro de solvencia y asignar carnet si aplica.</p>
+        </div>
+        <form action="solv2.php" method="post" class="space-y-8 bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8 shadow">
+            <?= csrf_input(); ?>
+            <div class="grid md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-sm font-medium text-neutral-200 mb-1">Cédula</label>
+                    <input name="ci" type="text" required class="w-full rounded-md bg-neutral-800/60 border border-neutral-600/60 px-4 py-2.5 text-neutral-100 placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-indigo-400/50 focus:border-indigo-400" placeholder="CI">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-neutral-200 mb-1">Solvente hasta</label>
+                    <input name="hasta" type="text" required class="w-full rounded-md bg-neutral-800/60 border border-neutral-600/60 px-4 py-2.5 text-neutral-100 placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-indigo-400/50 focus:border-indigo-400" placeholder="AAAA-MM-DD o texto">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-neutral-200 mb-1">Número de Factura</label>
+                    <input name="NumeroD" type="text" required class="w-full rounded-md bg-neutral-800/60 border border-neutral-600/60 px-4 py-2.5 text-neutral-100 placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-indigo-400/50 focus:border-indigo-400" placeholder="Factura">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-neutral-200 mb-1">Número de Carnet (opcional)</label>
+                    <input name="CarnetNum" type="text" minlength="10" maxlength="10" class="w-full rounded-md bg-neutral-800/60 border border-neutral-600/60 px-4 py-2.5 text-neutral-100 placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-indigo-400/50 focus:border-indigo-400" placeholder="10 dígitos">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-neutral-200 mb-1">Confirmar Carnet</label>
+                    <input name="CarnetNum2" type="text" minlength="10" maxlength="10" class="w-full rounded-md bg-neutral-800/60 border border-neutral-600/60 px-4 py-2.5 text-neutral-100 placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-indigo-400/50 focus:border-indigo-400" placeholder="Repetir si aplica">
+                </div>
             </div>
-
-            <div class="form-floating mb-3"> 
-                        
-                        <input type="text"  name="hasta" class="form-control" placeholder="name@example.com" required> 
-                        <label for="floatingInput">Solvente hasta:</label>
+            <div class="flex flex-col sm:flex-row gap-4 pt-2">
+                <button type="submit" class="flex-1 inline-flex justify-center rounded-md bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-5 py-2.5 transition focus:outline-none focus:ring focus:ring-emerald-400/50">Registrar</button>
+                <a href="SetCarnetNum.php" class="flex-1 inline-flex justify-center rounded-md bg-sky-600 hover:bg-sky-500 text-white font-medium px-5 py-2.5 transition focus:outline-none focus:ring focus:ring-sky-400/50">Asignar Carnet</a>
             </div>
-
-            <div class="form-floating mb-3"> 
-                        
-                        <input type="number"  name="NumeroD" class="form-control" placeholder="name@example.com" required> 
-                        <label for="floatingInput">Numero de factura:</label>
+            <div class="pt-2 text-center">
+                <a href="HomeFailed.php" class="inline-flex justify-center rounded-md bg-neutral-700/70 hover:bg-neutral-600 text-neutral-100 text-sm font-medium px-5 py-2 transition focus:outline-none focus:ring focus:ring-neutral-400/40">Volver</a>
             </div>
-
-            <div class="form-floating mb-3"> 
-                        
-                        <input type="number"  name="CarnetNum" class="form-control" maxlength="10" minlength="10" placeholder="name@example.com" required> 
-                        <label for="floatingInput">Numero de Carnet:</label>
-            </div>
-
-            <div class="form-floating mb-3"> 
-                        
-                        <input type="number"  name="CarnetNum2" class="form-control" maxlength="10" minlength="10" placeholder="name@example.com" required> 
-                        <label for="floatingInput">Confirmacion del Numero de Carnet:</label>
-            </div>
-
-            <input type="submit" class="btn btn-success w-100" value="Registrar"> 
         </form>
-
-        <br><a class='btn btn-success' href='HomeFailed.php' role='button'>Return</a>
-        <br>
-        <br><a class='btn btn-success' href='SetCarnetNum.php' role='button'>Set Carnet Number</a>
-
-        </div>
-        </div>
-        </div>
+    </div>
 </div>
-    </body>
-</html>
+<?php render_footer(); ?>

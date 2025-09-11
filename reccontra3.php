@@ -1,178 +1,73 @@
-<!-- ANGELO POLGROSSI | 04124856320 -->
 <?php
+require_once __DIR__ . '/src/bootstrap.php';
+require_once __DIR__ . '/src/layout.php';
 
-session_start();
-if (empty($_SESSION["correo"])) {
-    
-    header("Location: reccontra.php");
-    
-    exit();
+if (empty($_SESSION['correo']) || empty($_SESSION['pass']) || empty($_SESSION['cod'])) {
+  header('Location: reccontra.php');
+  exit;
 }
-
-if (empty($_SESSION["pass"])) {
-    
-    header("Location: reccontra.php");
-    
-    exit();
-}
-
-if (empty($_SESSION["cod"])) {
-    
-    header("Location: reccontra.php");
-    
-    exit();
-}
-
-
-?>
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Recuperar Contraseña</title>
-    <link rel="shortcut icon" href="favicon.png">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-Zenh87qX5JnK2Jl0vWa8Ck2rdkQ2Bzep5IDxbcnCeuOxjzrPF/et3URy9Bv1WTRi" crossorigin="anonymous">
-</head>
-<body>
-    <div
-    style="
-      background: url('piscina.jpg') no-repeat center center fixed;
-      background-size: cover;
-    ">
-            <div class="container">
-                <div class="row vh-100 justify-content-center align-items-center">
-                    <div class="col-auto p-5">
-<?php
-
 
 use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\SMTP;
 use PHPMailer\PHPMailer\Exception;
+require_once __DIR__ . '/PHPMailer.php';
+require_once __DIR__ . '/Exception.php';
+require_once __DIR__ . '/SMTP.php';
 
-require 'PHPMailer.php'; // Only file you REALLY need
-require 'Exception.php'; // If you want to debug
-require 'SMTP.php';
+$error = null; $sent = false;
+if (!verify_csrf()) {
+  http_response_code(422);
+  $error = 'Token CSRF inválido.';
+}
 
-                $cod = $_POST["cod"];
+$cod = trim($_POST['cod'] ?? '');
+if (!$error && $cod === '') { $error = 'Debe indicar el código.'; }
 
-                if ($cod == "") {
-                    header("Location: index.php");
-    
-              exit();
-                } else {
-   
+if (!$error) {
+  if (hash_equals($_SESSION['cod'], $cod)) {
+    try {
+      $mail = new PHPMailer(true);
+      $mail->isSMTP();
+      $mail->Host = 'smtp.gmail.com';
+      $mail->SMTPAuth = true;
+      $mail->Username = 'coleabgca@gmail.com';
+      $mail->Password = 'nqqirendnyzasbyf';
+      $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
+      $mail->Port = 465;
+      $mail->CharSet = 'UTF-8';
+      $mail->setFrom('coleabgca@gmail.com', 'Colegio de Abogados del Estado Carabobo');
+      $mail->addAddress($_SESSION['correo']);
+      $mail->isHTML(true);
+      $mail->Subject = 'Datos de ingreso al sistema del Colegio de Abogados del Estado Carabobo';
+      $mail->Body = '<h1>Sus datos de usuario son:</h1><br><b>Contraseña: ' . h($_SESSION['pass']) . '</b><br><p><em>Si tiene algun problema contacte a informaticacolegioabogados@gmail.com</em></p>';
+      $mail->AltBody = 'Contraseña: ' . $_SESSION['pass'];
+      $mail->send();
+      $sent = true;
+    } catch (Throwable $e) {
+      error_log('[reccontra3 mail] ' . $e->getMessage());
+      $error = 'No se pudo enviar el email con sus datos.';
+    }
+  } else {
+    $error = 'El código de confirmación no coincide.';
+  }
+}
 
-                        if ($cod == $_SESSION["cod"]) {
-                                    
-
-                                        $mail = new PHPMailer(true);
-
-                                        try {
-
-                                            if (!filter_var($_SESSION["correo"], FILTER_VALIDATE_EMAIL)) {
-                                                throw new Exception('Dirección de correo electrónico no válida.');
-                                              }
-
-                                            //Server settings
-                                            $mail->SMTPDebug = 0;                      //Enable verbose debug output
-                                            $mail->isSMTP();                                            //Send using SMTP
-                                            $mail->Host       = 'smtp.gmail.com';                     //Set the SMTP server to send through
-                                            $mail->SMTPAuth   = true;                                   //Enable SMTP authentication
-                                            $mail->Username   = 'coleabgca@gmail.com';                     //SMTP username
-                                            $mail->Password   = 'nqqirendnyzasbyf';                               //SMTP password
-                                            $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;            //Enable implicit TLS encryption
-                                            $mail->Port       = 465;                                    //TCP port to connect to; use 587 if you have set `SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS`
-
-                                            //Recipients
-                                            $mail->setFrom('coleabgca@gmail.com', 'Colegio de Abogados
-                                            del Estado Carabobo');
-                                            $mail->addAddress($_SESSION["correo"]);     //Add a recipient
-                                            //$mail->addAddress('ellen@example.com');               //Name is optional
-                                            //$mail->addReplyTo('info@example.com', 'Information');
-                                            //$mail->addCC('cc@example.com');
-                                            //$mail->addBCC('bcc@example.com');
-
-                                            //Attachments
-                                            //$mail->addAttachment('/var/tmp/file.tar.gz');         //Add attachments
-                                            //$mail->addAttachment('/tmp/image.jpg', 'new.jpg');    //Optional name
-
-                                            //Content
-                                            $mail->isHTML(true); 
-                                            $mail->CharSet = 'UTF-8';                                 //Set email format to HTML
-                                            $mail->Subject = 'Datos de ingreso al sistema del Colegio de Abogados del Estado Carabobo';
-                                            $mail->Body    = '<h1>Sus datos de usuario son:</h1>
-                                            <br>'
-                                            .
-                                            '<b>Contraseña: ' . $_SESSION["pass"] . '</b>' . '<br>' .
-                                            '<p><em>Si tiene algun problema con respecto al funcionamiento
-                                            de la pagina web no dude en contactarnos al correo electronico informaticacolegioabogados@gmail.com</em></p>';
-                                            $mail->AltBody = '<h1>Sus datos de usuario son:</h1>
-                                            <br>'
-                                            .
-                                            '<b>Contraseña: ' . $_SESSION["pass"] . '</b>' . '<br>' .
-                                            '<p><em>Si tiene algun problema con respecto al funcionamiento
-                                            de la pagina web no dude en contactarnos al correo electronico informaticacolegioabogados@gmail.com</em></p>';
-                                            
-                                            if (!$mail->send()) {
-                                                throw new Exception($mail->ErrorInfo);
-                                              }
-                                              echo "<div class='alert alert-success' role='alert'>
-                                              Email con sus datos de usuario enviado a su correo: $_SESSION[correo]</div><br>";
-                                              
-                                            } catch (Exception $e) {
-                                                echo "<div class='alert alert-danger' role='alert'>
-                                              Ha ocurrido un error al momento de enviar el email
-                                              con sus datos de usuario
-                                              al correo electronico proporcionado $_SESSION[correo]</div><br>";
-                                            }
-
-                                            echo "<div class='alert alert-info' role='alert'>
-                                            Si desea cambiar sus datos de usuario <a href= 'ingre.php'>ingrese</a> al sistema
-                                             del Colegio de Abogados
-                                            del Estado Carabobo y vaya al menu que se muestra tocando el boton
-                                            con las tres rayas en el lado superior derecho</div>";
-                                        
-                                              echo        
-                                            
-                                              "<br>
-                                              <form action='index.php'>
-                                          <button type='submit' id='buttom' class='btn btn-warning'>Salir</button>
-                                          </form>";
-
-                                          session_destroy();
-                                               
-                        
-                        } else {
-                            echo "<div class='alert alert-danger' role='alert'>
-                            El codigo de confirmacion no coincide, por favor intentelo de nuevo
-                </div>";
-                    echo        
-            "<br>
-            <form action='reccontra.php'>
-            <button type='submit' id='buttom' class='btn btn-primary'>Intente de nuevo</button>
-            </form>
-            <br>
-            <form action='index.php'>
-        <button type='submit' id='buttom' class='btn btn-warning'>Salir</button>
-        </form>";
-                        }
-
-        
-                    }
-        
-
+render_header('Recuperar Contraseña - Envío', 'piscina.jpg');
 ?>
-
+<div class="min-h-screen px-4 py-10">
+  <div class="max-w-xl mx-auto">
+    <div class="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl shadow p-8 space-y-6">
+      <?php if($error): ?>
+        <div class="rounded-md px-4 py-3 text-sm bg-rose-500/15 text-rose-200 border border-rose-400/30"><?php echo h($error); ?></div>
+      <?php else: ?>
+        <div class="rounded-md px-4 py-3 text-sm bg-emerald-500/15 text-emerald-200 border border-emerald-400/30">Email enviado a: <?php echo h($_SESSION['correo']); ?></div>
+        <div class="rounded-md px-4 py-3 text-sm bg-indigo-500/15 text-indigo-200 border border-indigo-400/30">Para cambiar sus datos, <a href="ingre.php" class="underline">ingrese</a> al sistema y use el menú principal.</div>
+        <?php session_destroy(); ?>
+      <?php endif; ?>
+      <div class="flex items-center gap-3 pt-2">
+        <a href="reccontra.php" class="flex-1 inline-flex justify-center rounded-md bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-6 py-2.5">Volver</a>
+        <a href="index.php" class="inline-flex justify-center rounded-md bg-amber-600 hover:bg-amber-500 text-white font-medium px-6 py-2.5">Salir</a>
+      </div>
+    </div>
+  </div>
 </div>
-        </div>
-        </div>
-        <div class="sticky-bottom">
-                <a class="img-fluid" href="soport.php">
-                <img src="contact2.png" alt="Soporte" width="100" height="100">
-              </a>
-                </div>
-</div>
-    </body>
-</html>
+<?php render_footer(); ?>

@@ -1,109 +1,75 @@
-<!-- ANGELO POLGROSSI | 04124856320 -->
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Results of process</title>
-    <link rel="shortcut icon" href="favicon.png">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-Zenh87qX5JnK2Jl0vWa8Ck2rdkQ2Bzep5IDxbcnCeuOxjzrPF/et3URy9Bv1WTRi" crossorigin="anonymous">
-</head>
-<body>
-    <div
-    style="
-      background: url('piscina.jpg') no-repeat center center fixed;
-      background-size: cover;
-    ">
-            <div class="container">
-                <div class="row min-vh-100 justify-content-center align-items-center">
-                    <div class="col-auto p-5">
-
 <?php
+require_once __DIR__ . '/src/bootstrap.php';
+require_once __DIR__ . '/src/layout.php';
+require_auth();
 
-$ScriptName = $_REQUEST["ScriptName"];
-$date = $_REQUEST["date"];
-$days = $_REQUEST["days"];
-
-if ($date == "" || $ScriptName == "") {
-    echo "<div class='alert alert-danger' role='alert'>
-                Es necesario que rellene todos los campos. 
-                </div>";
-            echo "<br>
-                <form action='SetDateScripts.php'>
-                <button type='submit' id='buttom' class='btn btn-primary'>Intente de nuevo</button>
-
-                </form>";
+// Basic validation + CSRF
+if (!verify_csrf()) {
+        http_response_code(422);
+        $error = 'Token CSRF inválido. Intente nuevamente.';
 }
-else {
 
-    $serverName = "sql5111.site4now.net"; 
-    $connectionInfo = array( "Database"=>"db_aa07eb_coleabg", "UID"=>"db_aa07eb_coleabg_admin", "PWD"=>"$0p0rt3ca" ,'ReturnDatesAsStrings'=>true);
-    require './conn.php'; $conn = sqlsrv_connect(DataConnect()[0], DataConnect()[1]);
+$scriptName = trim($_POST['ScriptName'] ?? '');
+$date = trim($_POST['date'] ?? '');
+$days = trim($_POST['days'] ?? '');
 
-        $consultusers = "SELECT * FROM DateScripts where ScriptName = '$ScriptName'";
-
-        $stmtusers = sqlsrv_query( $conn, $consultusers);
-        $rowclieusers = sqlsrv_fetch_array( $stmtusers, SQLSRV_FETCH_ASSOC);
-        $nullornotusers = is_null($rowclieusers);
-
-        if ($nullornotusers == false) {
-
-            $consultusers = "UPDATE DateScripts SET date = '$date' WHERE ScriptName = '$ScriptName';UPDATE DateScripts SET days = '$days' WHERE ScriptName = '$ScriptName'";
-            
-            $stmtusers = sqlsrv_query( $conn, $consultusers);
-
-                if ($stmtusers == false) {
-                    echo "<div class='alert alert-danger' role='alert'>
-                        Ha ocurrido un error, por favor intente de nuevo.
-                        </div>";
-                    echo "<br>
-                        <form action='SetDateScripts.php'>
-                        <button type='submit' id='buttom' class='btn btn-primary'>Intentar de nuevo</button>
-                        </form>";
-                } else {
-                    echo "<div class='alert alert-success' role='alert'>
-                    Date of: $ScriptName, '$date', successfuly updated!
-                        </div>";
-                    echo "<br>
-                        <form action='SetDateScripts.php'>
-                        <button type='submit' id='buttom' class='btn btn-primary'>Continuar</button>
-                        </form>";
-                }
-
-        } else {
-
-
-            $consultusers = "INSERT INTO DateScripts (ScriptName, date, days)
-            VALUES ('$ScriptName', '$date', '$days')";
-            
-            $stmtusers = sqlsrv_query( $conn, $consultusers);
-
-                if ($stmtusers == false) {
-                    echo "<div class='alert alert-danger' role='alert'>
-                        Ha ocurrido un error, por favor intente de nuevo.
-                        </div>";
-                    echo "<br>
-                        <form action='SetDateScripts.php'>
-                        <button type='submit' id='buttom' class='btn btn-primary'>Intente de nuevo</button>
-                        </form>";
-                } else {
-                    echo "<div class='alert alert-success' role='alert'>
-                        Date of: $ScriptName, '$date', successfuly stored!
-                        </div>";
-                    echo "<br>
-                        <form action='SetDateScripts.php'>
-                        <button type='submit' id='buttom' class='btn btn-primary'>Continuar</button>
-                        </form>";
-                }
-
+if (!isset($error)) {
+        if ($scriptName === '' || $date === '' || $days === '') {
+                $error = 'Todos los campos son obligatorios.';
+        } elseif (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+                $error = 'Formato de fecha inválido (use YYYY-MM-DD).';
+        } elseif (!ctype_digit($days)) {
+                $error = 'Días debe ser numérico.';
         }
-    }
-?>
+}
 
+$success = null; $action = null; $detail = null;
+if (!isset($error)) {
+        try {
+                $pdo = db();
+                $pdo->beginTransaction();
+                $stmt = $pdo->prepare('SELECT TOP 1 ScriptName FROM DateScripts WHERE ScriptName = ?');
+                $stmt->execute([$scriptName]);
+                $exists = (bool)$stmt->fetchColumn();
+                if ($exists) {
+                        $upd = $pdo->prepare('UPDATE DateScripts SET date = ?, days = ? WHERE ScriptName = ?');
+                        $upd->execute([$date, $days, $scriptName]);
+                        $action = 'updated';
+                } else {
+                        $ins = $pdo->prepare('INSERT INTO DateScripts (ScriptName, date, days) VALUES (?,?,?)');
+                        $ins->execute([$scriptName, $date, $days]);
+                        $action = 'created';
+                }
+                $pdo->commit();
+                $success = true;
+                $detail = $action === 'updated' ? 'actualizada' : 'registrada';
+        } catch (Throwable $e) {
+                if ($pdo && $pdo->inTransaction()) { $pdo->rollBack(); }
+                error_log('[SetDateScripts2] ' . $e->getMessage());
+                $error = 'Ha ocurrido un error interno.';
+        }
+}
+
+render_header('Resultado - Date Scripts', 'piscina.jpg');
+?>
+<div class="min-h-screen px-4 py-10">
+    <div class="max-w-xl mx-auto">
+        <div class="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl shadow p-8 space-y-6">
+            <h1 class="text-xl font-semibold text-white tracking-tight">Resultado</h1>
+            <?php if(isset($error)): ?>
+                <div class="rounded-lg px-4 py-3 text-sm font-medium bg-rose-500/15 text-rose-200 border border-rose-400/30">
+                    <?php echo h($error); ?>
+                </div>
+            <?php else: ?>
+                <div class="rounded-lg px-4 py-3 text-sm font-medium bg-emerald-500/15 text-emerald-200 border border-emerald-400/30">
+                    Fecha de <strong><?php echo h($scriptName); ?></strong> (<?php echo h($date); ?>) <?php echo $detail; ?> correctamente.
+                </div>
+            <?php endif; ?>
+            <div class="flex items-center gap-3 pt-2">
+                <a href="SetDateScripts.php" class="flex-1 inline-flex justify-center rounded-md bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-6 py-2.5 transition focus:outline-none focus:ring focus:ring-indigo-400/50">Volver</a>
+                <a href="HomeFailed.php" class="inline-flex justify-center rounded-md bg-slate-600 hover:bg-slate-500 text-white font-medium px-6 py-2.5 transition focus:outline-none focus:ring focus:ring-slate-400/50">Inicio</a>
+            </div>
+        </div>
+    </div>
 </div>
-</div>
-</div>
-</div>
-</body>
-</html>
+<?php render_footer(); ?>

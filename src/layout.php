@@ -30,7 +30,27 @@ function render_header(string $title, string $bgImage): void {
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title><?= h($title) ?></title>
         <link rel="shortcut icon" href="favicon.png">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css" rel="stylesheet">
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script>
+            tailwind.config = {
+                theme: {
+                    extend: {
+                        colors: {
+                            brand: {
+                                50: '#f0f9ff',
+                                500: '#0ea5e9',
+                                600: '#0284c7'
+                            }
+                        }
+                    }
+                }
+            }
+        </script>
+        <style>
+            /* Utility helpers to mimic some Bootstrap spacing semantics if legacy classes remain */
+            .text-light { color: #f1f5f9; }
+            .sticky-bottom { position: fixed; bottom: 1rem; right: 1rem; }
+        </style>
     <meta http-equiv="Cache-Control" content="no-store" />
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />

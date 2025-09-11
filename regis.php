@@ -7,67 +7,55 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Registrarse</title>
     <link rel="shortcut icon" href="favicon.png">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-Zenh87qX5JnK2Jl0vWa8Ck2rdkQ2Bzep5IDxbcnCeuOxjzrPF/et3URy9Bv1WTRi" crossorigin="anonymous">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>.text-light{color:#f1f5f9}.sticky-bottom{position:fixed;bottom:1rem;right:1rem}</style>
 
 </head>
 <body>
-    <div style=" background: url('salonestudiosjuridicos.jpg') no-repeat center center fixed;
-      background-size: cover; ">
-            <div class="container">
-                <div class="row min-vh-100 justify-content-center align-items-center">
-                
-                    <div class="col-auto p-5">
-                    <p class='h1 text-light'>Crea tu cuenta!</p>
-            <form action="regis2.php" method="post">
-                <?php require_once __DIR__ . '/src/bootstrap.php'; echo csrf_input(); ?>
-                
-                
-                <br>
-                <div class="input-group input-group-sm mb-3">
-                <span class="input-group-text" id="inputGroup-sizing-sm">Email</span>
-                <input name="correo" type="email" class="form-control" placeholder="Nombre@ejemplo.com" aria-describedby="inputGroup-sizing-sm" required>
-                
-                <input name="correo2" type="email" class="form-control" placeholder="Confirmar" aria-describedby="inputGroup-sizing-sm" required>
-                    
-                  </div>
-    
-                  <div class="input-group input-group-sm mb-3">
-                  <span class="input-group-text" id="inputGroup-sizing-sm">Contraseña</span>
-                <input name="contra" type="password" class="form-control" placeholder="Minimo 8 caracteres" aria-describedby="inputGroup-sizing-sm" pattern=".{8,}" required>
-                
-                
-                <input name="contra2" type="password" class="form-control" placeholder="Confirmar" aria-describedby="inputGroup-sizing-sm" pattern=".{8,}" required>
-                    
-                </div>
-                <p class='text-light'>Evite usar puntos "." o guiones "-" para separar los numeros</p>
-                <div class="form-floating mb-3"> 
-            
-                    <input type="number"  name="ci" max="99999999" class="form-control" placeholder="name@example.com" required> 
-                    <label for="floatingInput">Cedula</label>
-        </div>
-        <div class="form-floating mb-3"> 
-            
-            <input type="number"  name="ip" max="999999" class="form-control" placeholder="name@example.com" required> 
-            <label for="floatingInput">Inpre</label>
-</div>
-<br>
-                    <input type="submit" class="btn btn-success w-100" value="Registrarse">
-                    
-                    
-            </form>
-            <br>
-            <p class='text-light'>Ya tienes una cuenta?, <a href="ingre.php">ingresar</a></p>
-        <form action='index.php'>
-        <button type="submit" id="buttom" class="btn btn-warning">Salir</button>
-        </form>
+        <div class="min-h-screen bg-cover bg-center flex items-center justify-center px-4" style="background-image:url('salonestudiosjuridicos.jpg')">
+            <div class="w-full max-w-2xl bg-slate-900/70 backdrop-blur rounded-xl p-8 shadow-lg">
+                <h1 class="text-2xl font-bold text-white mb-6">Crea tu cuenta</h1>
+                <form action="regis2.php" method="post" class="space-y-6">
+                    <?php require_once __DIR__ . '/src/bootstrap.php'; echo csrf_input(); ?>
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-200 mb-1">Email</label>
+                            <input name="correo" type="email" required placeholder="nombre@ejemplo.com" class="w-full rounded-md bg-slate-800/70 border border-slate-600 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/40 text-slate-100 px-3 py-2 text-sm outline-none" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-200 mb-1">Confirmar Email</label>
+                            <input name="correo2" type="email" required placeholder="repite tu email" class="w-full rounded-md bg-slate-800/70 border border-slate-600 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/40 text-slate-100 px-3 py-2 text-sm outline-none" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-200 mb-1">Contraseña</label>
+                            <input name="contra" type="password" pattern=".{8,}" required placeholder="mínimo 8 caracteres" class="w-full rounded-md bg-slate-800/70 border border-slate-600 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/40 text-slate-100 px-3 py-2 text-sm outline-none" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-200 mb-1">Confirmar Contraseña</label>
+                            <input name="contra2" type="password" pattern=".{8,}" required placeholder="repite contraseña" class="w-full rounded-md bg-slate-800/70 border border-slate-600 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/40 text-slate-100 px-3 py-2 text-sm outline-none" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-200 mb-1">Cédula</label>
+                            <input name="ci" type="number" max="99999999" required class="w-full rounded-md bg-slate-800/70 border border-slate-600 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/40 text-slate-100 px-3 py-2 text-sm outline-none" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-200 mb-1">Inpre</label>
+                            <input name="ip" type="number" max="999999" required class="w-full rounded-md bg-slate-800/70 border border-slate-600 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/40 text-slate-100 px-3 py-2 text-sm outline-none" />
+                        </div>
+                    </div>
+                    <p class="text-xs text-slate-300">Evita usar puntos "." o guiones "-" para separar los números</p>
+                    <div class="flex gap-4 flex-col md:flex-row">
+                        <button type="submit" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-sm rounded-md px-4 py-2 transition">Registrarse</button>
+                        <a href="ingre.php" class="flex-1 text-center bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm rounded-md px-4 py-2 transition">Ingresar</a>
+                    </div>
+                </form>
+                <form action="index.php" class="mt-6">
+                    <button type="submit" class="w-full bg-amber-500 hover:bg-amber-400 text-white font-medium text-sm rounded-md px-4 py-2 transition">Salir</button>
+                </form>
+            </div>
+            <div class="sticky-bottom">
+                <a href="soport.php" class="block"><img src="contact2.png" alt="Soporte" width="100" height="100" class="hover:scale-105 transition" /></a>
             </div>
         </div>
-        </div>
-        <div class="sticky-bottom">
-                <a class="img-fluid" href="soport.php">
-                <img src="contact2.png" alt="Soporte" width="100" height="100">
-              </a>
-                </div>
-</div>
 </body>
 </html>

@@ -19,50 +19,40 @@ if (empty($_SESSION["nameuser"])) {
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Ingresar</title>
     <link rel="shortcut icon" href="favicon.png">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-Zenh87qX5JnK2Jl0vWa8Ck2rdkQ2Bzep5IDxbcnCeuOxjzrPF/et3URy9Bv1WTRi" crossorigin="anonymous">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      .text-light{color:#f1f5f9}.sticky-bottom{position:fixed;bottom:1rem;right:1rem}
+    </style>
     
 </head>
 <body>
-    <div style=" background: url('domo.jpg') no-repeat center center fixed;
-      background-size: cover; ">
-            <div class="container">
-                <div class="row min-vh-100 justify-content-center align-items-center">
-                    <div class="col-auto p-5">
-                    <p class='h1 text-light'>Ingresa al Sistema!</p>
-      <form action="login.php" method="post">
-        <?php require_once __DIR__ . '/src/bootstrap.php'; echo csrf_input(); ?>
-                
-                
-                <br>
-                <div class="form-floating mb-3">
-        
-                <input name="user" type="text" class="form-control" placeholder="name@example.com" required>
-                <label for="floatingInput">Usuario o Email</label>
-                  </div>
-                  <div class="form-floating">
-                <input name="password" type="password" class="form-control" placeholder="Password" required>
-                <label for="floatingPassword">Contraseña</label>
-                </div>
-                <br>
-                
-                <input type="hidden" name="recaptcha_response" id="recaptchaResponse">
-                    <input type="submit" class="btn btn-success w-100" value="Ingresar">
-            </form>
-            <br>
-            <p class='text-light'>Olvidaste tus datos de inicio de sesion?,<a href="reccontra.php">Recuperar</a></p>
-            <p class='text-light'>Aun no tienes una cuenta?, <a href="regis.php">Registrate</a></p>
-
-            <form action='index.php'>
-            <button type="submit" id="buttom" class="btn btn-warning">Salir</button>
-            </form>
-            </div>
+    <div class="min-h-screen bg-cover bg-center flex items-center justify-center px-4" style="background-image:url('domo.jpg')">
+      <div class="w-full max-w-md bg-slate-900/70 backdrop-blur rounded-xl p-8 shadow-lg">
+        <h1 class="text-2xl font-bold text-white mb-6">Ingresa al Sistema</h1>
+        <form action="login.php" method="post" class="space-y-5">
+          <?php require_once __DIR__ . '/src/bootstrap.php'; echo csrf_input(); ?>
+          <div>
+            <label class="block text-sm font-medium text-slate-200 mb-1">Usuario o Email</label>
+            <input name="user" type="text" required class="w-full rounded-md bg-slate-800/70 border border-slate-600 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/40 text-slate-100 px-3 py-2 text-sm outline-none" placeholder="usuario o email" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-200 mb-1">Contraseña</label>
+            <input name="password" type="password" required class="w-full rounded-md bg-slate-800/70 border border-slate-600 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/40 text-slate-100 px-3 py-2 text-sm outline-none" placeholder="********" />
+          </div>
+          <input type="hidden" name="recaptcha_response" id="recaptchaResponse" />
+          <button type="submit" class="w-full inline-flex justify-center items-center bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-sm rounded-md px-4 py-2 transition">Ingresar</button>
+        </form>
+        <div class="mt-6 space-y-2 text-xs text-slate-300">
+          <p>Olvidaste tus datos? <a class="text-emerald-400 hover:text-emerald-300 underline" href="reccontra.php">Recuperar</a></p>
+          <p>¿Aún no tienes una cuenta? <a class="text-emerald-400 hover:text-emerald-300 underline" href="regis.php">Regístrate</a></p>
         </div>
-        </div>
-        <div class="sticky-bottom">
-                <a class="img-fluid" href="soport.php">
-                <img src="contact2.png" alt="Soporte" width="100" height="100">
-              </a>
-                </div>
-</div>
+        <form action="index.php" class="mt-6">
+          <button type="submit" class="w-full bg-amber-500 hover:bg-amber-400 text-white font-medium text-sm rounded-md px-4 py-2 transition">Salir</button>
+        </form>
+      </div>
+      <div class="sticky-bottom">
+        <a href="soport.php" class="block"><img src="contact2.png" alt="Soporte" width="100" height="100" class="hover:scale-105 transition" /></a>
+      </div>
+    </div>
 </body>
 </html>

@@ -1,57 +1,33 @@
-<!-- ANGELO POLGROSSI | 04124856320 -->
-<!DOCTYPE html>
-<html lang="es">
-<html>
-    <head>
-        <meta charset="UTF-8">
-        <meta http-equiv="X-UA-Compatible" content="ie=edge">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Set Date Scripts</title> <!--title of page-->
-        <link rel="shortcut icon" href="favicon.png">
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-Zenh87qX5JnK2Jl0vWa8Ck2rdkQ2Bzep5IDxbcnCeuOxjzrPF/et3URy9Bv1WTRi" crossorigin="anonymous">
-
-    </head>
-
-    <body>
-    <div
-    style="
-      background: url('piscina.jpg') no-repeat center center fixed;
-      background-size: cover;
-    ">
-            <div class="container">
-                <div class="row min-vh-100 justify-content-center align-items-center">
-                    <div class="col-auto p-5">
-                    <h1 class="text-light text-center">Set Carnet Number</h1>
-                    <br>
-        <form action="SetDateScripts2.php" method="post">
-        <br>
-                <div class="form-floating mb-3"> 
-            
-            <input type="text"  name="ScriptName" class="form-control" placeholder="name@example.com" required> 
-            <label for="floatingInput">Script Name</label>
-            </div>
-
-            <div class="form-floating mb-3"> 
-                        
-                        <input type="text"  name="date" class="form-control" placeholder="name@example.com" required> 
-                        <label for="floatingInput">Date</label>
-            
-            </div>
-
-            <div class="form-floating mb-3"> 
-                        
-                        <input type="text"  name="days" class="form-control" placeholder="name@example.com" required> 
-                        <label for="floatingInput">Days</label>
-            
-            </div>
-
-            <input type="submit" class="btn btn-success w-100" value="Register date"> 
-        </form>
-        <br><a class='btn btn-success' href='HomeFailed.php' role='button'>Return</a>
-        
+<?php
+require_once __DIR__ . '/src/bootstrap.php';
+require_once __DIR__ . '/src/layout.php';
+require_auth();
+render_header('Set Date Scripts', 'piscina.jpg');
+?>
+<div class="min-h-screen px-4 py-10">
+    <div class="max-w-xl mx-auto">
+        <div class="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl shadow p-8">
+            <h1 class="text-2xl font-semibold text-white tracking-tight mb-6">Registrar / Actualizar Fecha de Script</h1>
+            <form action="SetDateScripts2.php" method="post" class="space-y-6">
+                <?php echo csrf_input(); ?>
+                <div>
+                    <label class="block text-sm font-medium text-white/80 mb-1">Nombre del Script</label>
+                    <input name="ScriptName" required maxlength="100" class="w-full rounded-md bg-white/10 border border-white/20 focus:border-emerald-400 focus:ring-emerald-400/40 text-white px-4 py-2.5 placeholder-white/40" placeholder="Ej: job_diario" />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-white/80 mb-1">Fecha (YYYY-MM-DD)</label>
+                    <input name="date" required pattern="\\d{4}-\\d{2}-\\d{2}" class="w-full rounded-md bg-white/10 border border-white/20 focus:border-emerald-400 focus:ring-emerald-400/40 text-white px-4 py-2.5 placeholder-white/40" placeholder="2025-12-31" />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-white/80 mb-1">Días</label>
+                    <input name="days" required pattern="\\d+" class="w-full rounded-md bg-white/10 border border-white/20 focus:border-emerald-400 focus:ring-emerald-400/40 text-white px-4 py-2.5 placeholder-white/40" placeholder="30" />
+                </div>
+                <div class="flex items-center gap-3 pt-2">
+                    <button type="submit" class="flex-1 inline-flex justify-center rounded-md bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-6 py-2.5 transition focus:outline-none focus:ring focus:ring-emerald-400/50">Registrar</button>
+                    <a href="HomeFailed.php" class="inline-flex justify-center rounded-md bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-6 py-2.5 transition focus:outline-none focus:ring focus:ring-indigo-400/50">Volver</a>
+                </div>
+            </form>
         </div>
-        </div>
-        </div>
+    </div>
 </div>
-    </body>
-</html>
+<?php render_footer(); ?>

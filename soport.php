@@ -1,73 +1,50 @@
-<!-- ANGELO POLGROSSI | 04124856320 -->
-
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Contacta con el Soporte</title>
-    <link rel="shortcut icon" href="favicon.png">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-Zenh87qX5JnK2Jl0vWa8Ck2rdkQ2Bzep5IDxbcnCeuOxjzrPF/et3URy9Bv1WTRi" crossorigin="anonymous">
-
-</head>
-<body>
-    <div style=" background: url('canchabeisbol.jpg') no-repeat center center fixed;
-      background-size: cover; ">
-            <div class="container">
-                <div class="row min-vh-100 justify-content-center align-items-center">
-                    <div class="col-auto p-5">
-                    <p class='h1 text-light'>Contacta con el Soporte</p>
-            
-            <form action="suport2.php" method="post">
-                
-                
-                <br>
-                <div class="form-floating mb-3">
-        
-                <input name="nombre" type="text" class="form-control" placeholder="name@example.com" required>
-                <label for="floatingInput">Nombre y Apellido</label>
-                  </div>
-                  <p class='text-light'>Evite usar puntos "." o guiones "-" para separar los numeros</p>
-
-                <div class="input-group input-group-sm mb-3"> 
-                <span class="input-group-text" id="inputGroup-sizing-sm">Cedula</span>
-
-                    <input type="number"  name="ci" max="99999999" aria-describedby="inputGroup-sizing-sm" class="form-control" required> 
-                    <span class="input-group-text" id="inputGroup-sizing-sm">Inpre</span>
-
-                    <input type="number"  name="ip" max="999999" aria-describedby="inputGroup-sizing-sm" class="form-control" required> 
-            
-        </div>
-        <div class="input-group input-group-sm mb-3"> 
-                <span class="input-group-text" id="inputGroup-sizing-sm">Telefono</span>
-
-                    <input type="number"  name="telefono" min = "999999999" max="9999999999" aria-describedby="inputGroup-sizing-sm" class="form-control" required> 
-                    <span class="input-group-text" id="inputGroup-sizing-sm">Email</span>
-
-                    <input type="email"  name="email" class="form-control" aria-describedby="inputGroup-sizing-sm" required> 
-            
-        </div>
-
-<div class="form-floating mb-3">
-<textarea name="mensaje" type="text" class="form-control" placeholder="Leave a comment here" pattern=".{8,}" style="height: 100px" required></textarea>
-                <label for="floatingPassword">Mensaje</label>
+<?php
+require_once __DIR__ . '/src/bootstrap.php';
+require_once __DIR__ . '/src/layout.php';
+render_header('Contacta con el Soporte', 'canchabeisbol.jpg');
+?>
+<div class="min-h-screen px-4 py-10">
+    <div class="max-w-2xl mx-auto">
+        <div class="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl shadow p-8">
+            <h1 class="text-2xl font-semibold text-white tracking-tight mb-6">Contacta con el Soporte</h1>
+            <p class="text-sm text-white/70 mb-6">Complete el formulario. Evite usar puntos o guiones para separar números.</p>
+            <form action="suport2.php" method="post" class="space-y-6">
+                <?php echo csrf_input(); ?>
+                <div>
+                    <label class="block text-sm font-medium text-white/80 mb-1">Nombre y Apellido</label>
+                    <input name="nombre" required maxlength="120" class="w-full rounded-md bg-white/10 border border-white/20 focus:border-indigo-400 focus:ring-indigo-400/40 text-white px-4 py-2.5 placeholder-white/40" />
                 </div>
-                <p class='text-light'>No logras contactarnos?, envianos un email a la direccion informaticacolegioabogados@gmail.com</p>
-                
-<br>
-                    <input type="submit" class="btn btn-success w-100" value="Enviar">
-                    
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-white/80 mb-1">Cédula</label>
+                        <input name="ci" type="text" pattern="\d{5,11}" required class="w-full rounded-md bg-white/10 border border-white/20 focus:border-indigo-400 focus:ring-indigo-400/40 text-white px-4 py-2.5" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-white/80 mb-1">Inpre</label>
+                        <input name="ip" type="text" pattern="\d{3,8}" required class="w-full rounded-md bg-white/10 border border-white/20 focus:border-indigo-400 focus:ring-indigo-400/40 text-white px-4 py-2.5" />
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-white/80 mb-1">Teléfono</label>
+                        <input name="telefono" type="text" pattern="\d{10}" required class="w-full rounded-md bg-white/10 border border-white/20 focus:border-indigo-400 focus:ring-indigo-400/40 text-white px-4 py-2.5" placeholder="0412000000" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-white/80 mb-1">Email</label>
+                        <input name="email" type="email" required class="w-full rounded-md bg-white/10 border border-white/20 focus:border-indigo-400 focus:ring-indigo-400/40 text-white px-4 py-2.5" />
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-white/80 mb-1">Mensaje</label>
+                    <textarea name="mensaje" minlength="8" required rows="5" class="w-full rounded-md bg-white/10 border border-white/20 focus:border-indigo-400 focus:ring-indigo-400/40 text-white px-4 py-3 resize-y"></textarea>
+                </div>
+                <p class="text-xs text-white/50">No logras contactarnos? Escríbenos a informaticacolegioabogados@gmail.com</p>
+                <div class="flex items-center gap-3 pt-2">
+                    <button class="flex-1 inline-flex justify-center rounded-md bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-6 py-2.5 transition focus:outline-none focus:ring focus:ring-emerald-400/50">Enviar</button>
+                    <a href="index.php" class="inline-flex justify-center rounded-md bg-amber-600 hover:bg-amber-500 text-white font-medium px-6 py-2.5 transition focus:outline-none focus:ring focus:ring-amber-400/50">Salir</a>
+                </div>
             </form>
-           <br>
-        
-        <form action='index.php'>
-        <button type="submit" id="buttom" class="btn btn-warning">Salir</button>
-        </form>
-            </div>
         </div>
-        </div>
-        
+    </div>
 </div>
-</body>
-</html>
+<?php render_footer(); ?>

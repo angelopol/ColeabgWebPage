@@ -1,99 +1,81 @@
-<!-- ANGELO POLGROSSI | 04124856320 -->
-<!DOCTYPE html>
-<html lang="es">
-<html>
-    <head>
-        <meta charset="UTF-8">
-        <meta http-equiv="X-UA-Compatible" content="ie=edge">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Search by date range</title> <!--title of page-->
-        <link rel="shortcut icon" href="favicon.png">
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-Zenh87qX5JnK2Jl0vWa8Ck2rdkQ2Bzep5IDxbcnCeuOxjzrPF/et3URy9Bv1WTRi" crossorigin="anonymous">
+<?php
+require_once __DIR__ . '/src/bootstrap.php';
+require_once __DIR__ . '/src/layout.php';
+require_auth();
+if (!verify_csrf()) { http_response_code(422); $error = 'Token CSRF inválido.'; }
 
-    </head>
+$desde = trim($_POST['desde'] ?? '');
+$hasta = trim($_POST['hasta'] ?? '');
+$error = $error ?? null; $results = [];
+if (!isset($error) && (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $desde) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $hasta))) {
+    $error = 'Formato de fechas inválido (use YYYY-MM-DD).';
+}
 
-    <body>
-        <div
-            style="
-            background: url('piscina.jpg') no-repeat center center fixed;
-            background-size: cover;
-            ">
-                <div class="container">
-                    <div class="row min-vh-100 justify-content-center align-items-center">
-                        <div class="col-auto p-5">
-                        
-                            <?php
+if (!$error) {
+        try {
+                $pdo = db();
+                $stmt = $pdo->prepare('SELECT CodClie, FechaE, Status, NumeroD, Solved, CarnetNum2, hasta FROM SOLV WHERE hasta >= ? AND hasta <= ?');
+                $stmt->execute([$desde, $hasta]);
+                $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                if ($rows) {
+                        $stmt2 = $pdo->prepare('SELECT OrdenC, Notas1, Notas2, Notas3 FROM SAFACT WHERE NumeroD = ?');
+                        foreach ($rows as $r) {
+                                $stmt2->execute([$r['NumeroD']]);
+                                $o = $stmt2->fetch(PDO::FETCH_ASSOC);
+                                $ordenC = $o['OrdenC'] ?? 'not found';
+                                $note = isset($o) ? trim(($o['Notas1'] ?? '') . ' ' . ($o['Notas2'] ?? '') . ' ' . ($o['Notas3'] ?? '')) : 'not found';
+                                $results[] = [
+                                        'CodClie' => $r['CodClie'],
+                                        'FechaE' => $r['FechaE'],
+                                        'Status' => $r['Status'],
+                                        'NumeroD' => $r['NumeroD'],
+                                        'OrdenC' => $ordenC,
+                                        'Nota' => $note,
+                                        'Solved' => $r['Solved'],
+                                        'CarnetNum2' => $r['CarnetNum2'],
+                                        'hasta' => $r['hasta'],
+                                ];
+                        }
+                } else {
+                        $error = 'No se encontraron resultados por rango de fecha.';
+                }
+        } catch (Throwable $e) {
+                error_log('[SearchRange] ' . $e->getMessage());
+                $error = 'Error interno.';
+        }
+}
 
-                                $desde = $_REQUEST["desde"];
-                                $hasta = $_REQUEST["hasta"];
-
-                                $serverName = "sql5111.site4now.net"; 
-$connectionInfo = array( "Database"=>"db_aa07eb_coleabg", "UID"=>"db_aa07eb_coleabg_admin", "PWD"=>"$0p0rt3ca" ,'ReturnDatesAsStrings'=>true);
-require './conn.php'; $conn = sqlsrv_connect(DataConnect()[0], DataConnect()[1]);
-
-                                $consultusers = "SELECT * FROM SOLV where hasta >= '$desde' and hasta <= '$hasta'";
-
-                                $stmtusers = sqlsrv_query( $conn, $consultusers);
-                                $rowclieusers = sqlsrv_fetch_array( $stmtusers, SQLSRV_FETCH_ASSOC);
-
-                                $nullornotusers = is_null($rowclieusers);
-
-                                $OrdenC = "";
-                                $Note = "";
-
-                                if ($nullornotusers == false) 
-                                    {   
-                                        $stmt1 = sqlsrv_query( $conn, $consultusers);
-                                        while( $rowclieusers = sqlsrv_fetch_array( $stmt1, SQLSRV_FETCH_ASSOC) ) 
-                                        {   
-                                            $OrdenC = "not found";
-                                            $Note = "not found";
-
-                                            $consult = "SELECT * FROM SAFACT where NumeroD = '$rowclieusers[NumeroD]'";
-
-                                            $stmt = sqlsrv_query( $conn, $consult);
-                                            $rowclie = sqlsrv_fetch_array( $stmt, SQLSRV_FETCH_ASSOC);
-
-                                            $nullornot = is_null($rowclie);
-
-                                            if ($nullornot == false) 
-                                                {   
-                                                    $stmt2 = sqlsrv_query( $conn, $consult);
-                                                    while( $rowclie = sqlsrv_fetch_array( $stmt2, SQLSRV_FETCH_ASSOC) ) 
-                                                    {
-                                                        $OrdenC = $rowclie['OrdenC'];
-                                                        $Note = $rowclie['Notas1'] . " " . $rowclie['Notas2'] . " " . $rowclie['Notas3'];
-
-                                                    }
-                                                }else 
-                                                {
-                                                    $OrdenC = $rowclieusers['hasta']; 
-                                                }
-    
-                                                echo "<div class='alert alert-warning' role='alert'>Ci: " .$rowclieusers['CodClie']. "; Fecha: "
-                                                . $rowclieusers['FechaE'] . "; Status: " . $rowclieusers['Status'] . "; Numero de Factura: " 
-                                                . $rowclieusers['NumeroD'] . "; OrdenC: " . $OrdenC . 
-                                                "; Nota: " . $Note . "; Resuelto: " . $rowclieusers['Solved'] . "; CarnetNum: " . $rowclieusers['CarnetNum2'] . 
-                                                "; Hasta: " . $rowclieusers['hasta'] . "</div>";
-
-                                        }
-                                    }
-                                else
-                                    {
-                                        echo "<div class='alert alert-danger' role='alert'>
-                                        No found results by date range.
-                                        </div>";
-                                    }
-
-                            ?>
-
-                            <br><a class='btn btn-success' href='SearchOperations.php' role='button'>Return</a>
-                            <br>
-                            <br><a class='btn btn-success' href='HomeFailed.php' role='button'>Return to Home</a>
-            
+render_header('Resultados por Rango de Fecha', 'piscina.jpg');
+?>
+<div class="min-h-screen px-4 py-10">
+    <div class="max-w-3xl mx-auto">
+        <div class="space-y-4">
+            <?php if($error): ?>
+                <div class="rounded-md px-4 py-3 text-sm bg-rose-500/15 text-rose-200 border border-rose-400/30"><?php echo h($error); ?></div>
+            <?php else: ?>
+                <?php foreach($results as $item): ?>
+                    <div class="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-5">
+                        <div class="grid md:grid-cols-2 gap-2 text-white/90 text-sm">
+                            <div><span class="text-white/60">CI:</span> <?php echo h($item['CodClie']); ?></div>
+                            <div><span class="text-white/60">Fecha:</span> <?php echo h($item['FechaE']); ?></div>
+                            <div><span class="text-white/60">Status:</span> <?php echo h($item['Status']); ?></div>
+                            <div><span class="text-white/60">Factura:</span> <?php echo h($item['NumeroD']); ?></div>
+                            <div><span class="text-white/60">OrdenC:</span> <?php echo h($item['OrdenC']); ?></div>
+                            <div><span class="text-white/60">Resuelto:</span> <?php echo h($item['Solved']); ?></div>
+                            <div><span class="text-white/60">CarnetNum:</span> <?php echo h($item['CarnetNum2']); ?></div>
+                            <div><span class="text-white/60">Hasta:</span> <?php echo h($item['hasta']); ?></div>
                         </div>
+                        <?php if(trim($item['Nota']) !== ''): ?>
+                            <div class="mt-3 text-white/80 text-sm"><span class="text-white/60">Nota:</span> <?php echo h($item['Nota']); ?></div>
+                        <?php endif; ?>
                     </div>
-                </div>
+                <?php endforeach; ?>
+            <?php endif; ?>
+            <div class="flex items-center gap-3 pt-2">
+                <a href="SearchOperations.php" class="flex-1 inline-flex justify-center rounded-md bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-6 py-2.5">Volver</a>
+                <a href="HomeFailed.php" class="inline-flex justify-center rounded-md bg-slate-600 hover:bg-slate-500 text-white font-medium px-6 py-2.5">Inicio</a>
+            </div>
         </div>
-    </body>
-</html>
+    </div>
+</div>
+<?php render_footer(); ?>

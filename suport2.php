@@ -1,193 +1,107 @@
-<!-- ANGELO POLGROSSI | 04124856320 -->
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Contacta con el Soporte</title>
-    <link rel="shortcut icon" href="favicon.png">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-Zenh87qX5JnK2Jl0vWa8Ck2rdkQ2Bzep5IDxbcnCeuOxjzrPF/et3URy9Bv1WTRi" crossorigin="anonymous">
-</head>
-<body>
-    <div
-    style="
-      background: url('canchabeisbol.jpg') no-repeat center center fixed;
-      background-size: cover;
-    ">
-            <div class="container">
-                <div class="row vh-100 justify-content-center align-items-center">
-                    <div class="col-auto p-5">
 <?php
+require_once __DIR__ . '/src/bootstrap.php';
+require_once __DIR__ . '/src/layout.php';
+require_auth(false); // public but we can rate-limit by IP later
 
 use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\SMTP;
 use PHPMailer\PHPMailer\Exception;
 
-require 'PHPMailer.php'; // Only file you REALLY need
-require 'Exception.php'; // If you want to debug
-require 'SMTP.php';
+require_once __DIR__ . '/PHPMailer.php';
+require_once __DIR__ . '/Exception.php';
+require_once __DIR__ . '/SMTP.php';
 
-                $ci = $_POST["ci"];
-                $ip = $_POST["ip"];
-                $nombre = $_POST["nombre"];
-                $mensaje = $_POST["mensaje"];
-                $telefono = $_POST["telefono"];
-                $email = $_POST["email"];
+$ci = trim($_POST['ci'] ?? '');
+$ip = trim($_POST['ip'] ?? '');
+$nombre = trim($_POST['nombre'] ?? '');
+$mensaje = trim($_POST['mensaje'] ?? '');
+$telefono = trim($_POST['telefono'] ?? '');
+$email = trim($_POST['email'] ?? '');
 
-                if ($ci == "" or $ip == "" or $nombre == "" or $mensaje == "" ) {
-                    header("Location: index.php");
-    
-              exit();
+$errors = [];
+if (!verify_csrf()) { $errors[] = 'Token CSRF inválido.'; }
+if ($ci === '' || $ip === '' || $nombre === '' || $mensaje === '') { $errors[] = 'Todos los campos son obligatorios.'; }
+if ($email && !filter_var($email, FILTER_VALIDATE_EMAIL)) { $errors[] = 'Email inválido.'; }
+if ($telefono && !preg_match('/^\d{10}$/', $telefono)) { $errors[] = 'Teléfono debe tener 10 dígitos.'; }
+if ($mensaje !== '' && mb_strlen($mensaje) < 8) { $errors[] = 'El mensaje debe tener al menos 8 caracteres.'; }
+
+$sent = false; $info = '';
+if (!$errors) {
+        try {
+                $pdo = db();
+                // Validate lawyer relationship by Inpre (Clase) and CI (CodClie/ID3)
+                $stmt = $pdo->prepare("SELECT TOP 1 CodClie FROM SACLIE WHERE Clase = ?");
+                $stmt->execute([$ip]);
+                $rowIp = $stmt->fetch(PDO::FETCH_ASSOC);
+                if (!$rowIp) {
+                        $errors[] = 'Abogado no inscrito o datos incorrectos.';
                 } else {
-
-                $consultclie= "SELECT * FROM SACLIE where CodClie like '%$ci%'";
-                $consultclie2= "SELECT * FROM SACLIE where ID3 like '%$ci%'";
-                $consultclieip= "SELECT * FROM SACLIE where Clase = '$ip'";
-    
-                $serverName = "sql5111.site4now.net"; 
-$connectionInfo = array( "Database"=>"db_aa07eb_coleabg", "UID"=>"db_aa07eb_coleabg_admin", "PWD"=>"$0p0rt3ca" ,'ReturnDatesAsStrings'=>true);
-require './conn.php'; $conn = sqlsrv_connect(DataConnect()[0], DataConnect()[1]);
-
-                $stmtclieip = sqlsrv_query( $conn, $consultclieip);
-                $rowclieip = sqlsrv_fetch_array( $stmtclieip, SQLSRV_FETCH_ASSOC);
-    
-                $nullornotclieip = is_null($rowclieip);
-
-                if ($nullornotclieip == false) {
-                    $stmtclie = sqlsrv_query( $conn, $consultclie);
-                $rowclie = sqlsrv_fetch_array( $stmtclie, SQLSRV_FETCH_ASSOC);
-    
-                $nullornotclie = is_null($rowclie);
-
-                $stmtclie2 = sqlsrv_query( $conn, $consultclie2);
-                $rowclie2 = sqlsrv_fetch_array( $stmtclie2, SQLSRV_FETCH_ASSOC);
-    
-                $nullornotclie2 = is_null($rowclie2);
-
-                    if ($nullornotclie == false or $nullornotclie2 == false) {
-
-                        if ($rowclieip['CodClie'] == $rowclie['CodClie'] or $rowclieip['CodClie'] == $rowclie2['CodClie']) {
-
-                                        $mail = new PHPMailer(true);
-
-                                        try {
-
-                                            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-                                                throw new Exception('Dirección de correo electrónico no válida.');
-                                                
-                                              }
-
-                                            //Server settings
-                                            $mail->SMTPDebug = 0;                      //Enable verbose debug output
-                                            $mail->isSMTP();                                            //Send using SMTP
-                                            $mail->Host       = 'smtp.gmail.com';                     //Set the SMTP server to send through
-                                            $mail->SMTPAuth   = true;                                   //Enable SMTP authentication
-                                            $mail->Username   = 'coleabgca@gmail.com';                     //SMTP username
-                                            $mail->Password   = 'nqqirendnyzasbyf';                               //SMTP password
-                                            $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;            //Enable implicit TLS encryption
-                                            $mail->Port       = 465;                                    //TCP port to connect to; use 587 if you have set `SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS`
-
-                                            //Recipients
-                                            $mail->setFrom('coleabgca@gmail.com', 'Colegio de Abogados
-                                            del Estado Carabobo');
-                                            $mail->addAddress("informaticacolegioabogados@gmail.com");     //Add a recipient
-                                            $mail->addAddress($email);               //Name is optional
-                                            //$mail->addReplyTo($email, $nombre);
-                                            //$mail->addCC('cc@example.com');
-                                            //$mail->addBCC('bcc@example.com');
-
-                                            //Attachments
-                                            //$mail->addAttachment('/var/tmp/file.tar.gz');         //Add attachments
-                                            //$mail->addAttachment('/tmp/image.jpg', 'new.jpg');    //Optional name
-
-                                            //Content
-                                            $mail->isHTML(true); 
-                                            $mail->CharSet = 'UTF-8';                                 //Set email format to HTML
-                                            $mail->Subject = 'Contacto con el Soporte!';
-                                            $mail->Body    = '<h1>Mensaje:</h1>' . '<p>' . $mensaje . '</p>' . '<br>' .
-                                            '<br>Datos del usuario: <br>' . $nombre . '<br>' .
-                                            $email . '<br>' . $telefono . '<br>' . 'Inpre: ' . $ip . '<br>' . 'Cedula: ' . $ci .
-                                            '<br><p><em>Gracias por contactarnos!</em></p>';
-
-                                            $mail->AltBody = 'Mensaje: ' . $mensaje . 
-                                            'Datos del usuario: ' . $nombre . ' ' .
-                                            $email . ' ' . $telefono . ' ' . 'Inpre: ' . $ip . 'Cedula: ' . $ci .
-                                            ' Gracias por contactarnos';
-                                            
-                                            if (!$mail->send()) {
-                                                throw new Exception($mail->ErrorInfo);
-                                              }
-                                            
-                                              echo "<div class='alert alert-success' role='alert'>
-                                              Mensaje enviado de forma exitosa!</div>";
-                                              
-                                            } catch (Exception $e) {
-                                                echo "<div class='alert alert-danger' role='alert'>
-                                              Ha ocurrido un error al momento de enviar el mensaje por favor intente de nuevo o contactenos 
-                                              a la direccion informaticacolegioabogados@gmail.com</div>";
-                                            }
-                    echo        
-            "</form>
-            <br>
-            <form action='index.php'>
-            <button type='submit' id='buttom' class='btn btn-warning'>Salir</button>
-            </form>";
-                                    } else {
-                            echo "<div class='alert alert-danger' role='alert'>
-                    Cedula e Inpre no coinciden!
-                </div>";
-                    echo        
-            "<br>
-            <form action='soport.php'>
-            <button type='submit' id='buttom' class='btn btn-primary'>Intente de nuevo</button>
-            </form>
-            <br>
-            <form action='index.php'>
-        <button type='submit' id='buttom' class='btn btn-warning'>Salir</button>
-        </form>";
+                        $stmt1 = $pdo->prepare("SELECT TOP 1 CodClie FROM SACLIE WHERE CodClie LIKE ?");
+                        $stmt2 = $pdo->prepare("SELECT TOP 1 CodClie FROM SACLIE WHERE ID3 LIKE ?");
+                        $like = "%$ci%"; $stmt1->execute([$like]); $stmt2->execute([$like]);
+                        $row1 = $stmt1->fetch(PDO::FETCH_ASSOC); $row2 = $stmt2->fetch(PDO::FETCH_ASSOC);
+                        if (!$row1 && !$row2) {
+                                $errors[] = 'Abogado no inscrito o datos de identidad ingresados de forma incorrecta.';
+                        } else {
+                                $codCandidates = array_filter([$row1['CodClie'] ?? null, $row2['CodClie'] ?? null]);
+                                if (!in_array($rowIp['CodClie'], $codCandidates, true)) {
+                                        $errors[] = 'Cédula e Inpre no coinciden.';
+                                }
                         }
+                }
+        } catch (Throwable $e) {
+                error_log('[suport2 validate] ' . $e->getMessage());
+                $errors[] = 'Error interno de validación.';
+        }
+}
 
-                    } else {
-                        echo "<div class='alert alert-danger' role='alert'>
-                    Abogado no inscrito o datos de identidad ingresados de forma incorrecta!
-                </div>";
-                    echo        
-            "<br>
-            <form action='soport.php'>
-            <button type='submit' id='buttom' class='btn btn-primary'>Intente de nuevo</button>
-            </form>
-            <br>
-            <form action='index.php'>
-        <button type='submit' id='buttom' class='btn btn-warning'>Salir</button>
-        </form>";
-                    }
+if (!$errors) {
+        try {
+                $mail = new PHPMailer(true);
+                $mail->isSMTP();
+                $mail->Host = 'smtp.gmail.com';
+                $mail->SMTPAuth = true;
+                $mail->Username = 'coleabgca@gmail.com';
+                $mail->Password = 'nqqirendnyzasbyf'; // TODO: move to env/secret
+                $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
+                $mail->Port = 465;
+                $mail->CharSet = 'UTF-8';
+                $mail->setFrom('coleabgca@gmail.com', 'Colegio de Abogados del Estado Carabobo');
+                $mail->addAddress('informaticacolegioabogados@gmail.com');
+                if ($email) { $mail->addAddress($email); }
+                $mail->isHTML(true);
+                $mail->Subject = 'Contacto con el Soporte';
+                $bodyEsc = nl2br(h($mensaje));
+                $mail->Body = '<h1>Mensaje</h1><p>' . $bodyEsc . '</p><hr><p><strong>Datos del usuario:</strong><br>' .
+                        h($nombre) . '<br>' . h($email) . '<br>' . h($telefono) . '<br>Inpre: ' . h($ip) . '<br>Cédula: ' . h($ci) . '</p>';
+                $mail->AltBody = 'Mensaje: ' . $mensaje . ' | Usuario: ' . $nombre . ' ' . $email . ' ' . $telefono . ' Inpre: ' . $ip . ' CI: ' . $ci;
+                $mail->send();
+                $sent = true; $info = 'Mensaje enviado de forma exitosa.';
+        } catch (Throwable $e) {
+                error_log('[suport2 mail] ' . $e->getMessage());
+                $errors[] = 'Ha ocurrido un error al enviar el mensaje.';
+        }
+}
 
-                } else {
-                    echo "<div class='alert alert-danger' role='alert'>
-                Abogado no inscrito o datos de identidad ingresados de forma incorrecta!
-            </div>";
-                echo        
-        "<br>
-        <form action='soport.php'>
-        <button type='submit' id='buttom' class='btn btn-primary'>Intente de nuevo</button>
-        </form>
-        <br>
-        <form action='index.php'>
-    <button type='submit' id='buttom' class='btn btn-warning'>Salir</button>
-    </form>"; }
- 
-            }  
+render_header('Contacto Soporte', 'canchabeisbol.jpg');
 ?>
-
-</div>
-        </div>
-        </div>
-        <div class="sticky-bottom">
-                <a class="img-fluid" href="soport.php">
-                <img src="contact2.png" alt="Soporte" width="100" height="100">
-              </a>
+<div class="min-h-screen px-4 py-10">
+    <div class="max-w-xl mx-auto">
+        <div class="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl shadow p-8 space-y-6">
+            <h1 class="text-xl font-semibold text-white tracking-tight">Resultado del envío</h1>
+            <?php if($errors): ?>
+                <div class="space-y-3">
+                    <?php foreach($errors as $e): ?>
+                        <div class="rounded-md px-4 py-2 text-sm bg-rose-500/15 text-rose-200 border border-rose-400/30"><?php echo h($e); ?></div>
+                    <?php endforeach; ?>
                 </div>
+            <?php else: ?>
+                <div class="rounded-md px-4 py-3 text-sm font-medium bg-emerald-500/15 text-emerald-200 border border-emerald-400/30"><?php echo h($info); ?></div>
+            <?php endif; ?>
+            <div class="flex items-center gap-3 pt-2">
+                <a href="soport.php" class="flex-1 inline-flex justify-center rounded-md bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-6 py-2.5 transition">Volver</a>
+                <a href="index.php" class="inline-flex justify-center rounded-md bg-amber-600 hover:bg-amber-500 text-white font-medium px-6 py-2.5 transition">Salir</a>
+            </div>
+        </div>
+    </div>
 </div>
-    </body>
-</html>
+<?php render_footer(); ?>
