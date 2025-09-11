@@ -38,14 +38,31 @@ if (!$lawyer) {
   $lawyer = $primaryMatch ?: ($multiple ? null : ($candidates[0] ?? null));
 }
 
-$insc = null; $solv = null; $operations = []; $hasHistoric = false; $hasAnyOtherYear = false; $notFound = false;
+$insc = null; $solv = null; $operations = []; $groupedRecent = []; $hasHistoric = false; $hasAnyOtherYear = false; $notFound = false;
 if ($lawyer) {
   $insc = $lawRepo->getInscriptionData($lawyer['CodClie']);
   $solv = $lawRepo->getSolvency($lawyer['CodClie']);
   $operations = $opsRepo->operationsByClient($input, $year);
   $hasHistoric = $opsRepo->anyOperationHistoric($input);
-  if ($year !== null && !$operations) {
-    // Check if there are operations in other years
+  if ($year === null) {
+    // Group descending by year (FechaE assumed YYYY-MM-DD). Limit each year to 25 entries for compactness.
+    $byYear = [];
+    foreach ($operations as $op) {
+      $y = substr((string)($op['FechaE'] ?? ''), 0, 4);
+      if (!preg_match('/^\d{4}$/', $y)) { $y = '----'; }
+      if (!isset($byYear[$y])) { $byYear[$y] = []; }
+      if (count($byYear[$y]) < 25) { // cap per year
+        $byYear[$y][] = $op;
+      }
+    }
+    // Sort years descending numerically, keeping non-year '----' at end.
+    $years = array_keys($byYear);
+    usort($years, function($a,$b){
+      if ($a === '----') return 1; if ($b === '----') return -1;
+      return (int)$b <=> (int)$a; // desc
+    });
+    foreach ($years as $y) { $groupedRecent[$y] = $byYear[$y]; }
+  } else if ($year !== null && !$operations) {
     $hasAnyOtherYear = $opsRepo->anyOperationHistoric($input);
   }
 } else {
@@ -108,18 +125,34 @@ if ($lawyer) {
           <div class="mt-6">
             <?php if ($year !== null): ?>
               <h2 class="text-xl text-white font-semibold">Operaciones en el año <?= h($year) ?>:</h2>
+              <div class="mt-2 max-h-72 overflow-y-auto pr-2 space-y-1">
+                <?php if ($operations): ?>
+                  <?php foreach ($operations as $op): ?>
+                    <p class="text-xs text-slate-200 leading-snug"><?= h($op['FechaE']) ?> <?= h($op['NumeroD']) ?> <?= h($op['OrdenC']) ?> <?= h(trim(($op['Notas1'] ?? '') . ' ' . ($op['Notas2'] ?? '') . ' ' . ($op['Notas3'] ?? '') . ' ' . ($op['Notas4'] ?? '') . ' ' . ($op['Notas5'] ?? '') . ' ' . ($op['Notas6'] ?? '') . ' ' . ($op['Notas7'] ?? ''))) ?></p>
+                  <?php endforeach; ?>
+                <?php else: ?>
+                  <p class="text-slate-300 text-sm">Sin transacciones en el año <?= h($year) ?>...</p>
+                <?php endif; ?>
+              </div>
             <?php else: ?>
-              <h2 class="text-xl text-white font-semibold">Operaciones recientes:</h2>
+              <h2 class="text-xl text-white font-semibold">Operaciones recientes (descendentes por año):</h2>
+              <div class="mt-2 max-h-80 overflow-y-auto pr-2 space-y-4">
+                <?php if ($groupedRecent): ?>
+                  <?php foreach ($groupedRecent as $y => $ops): ?>
+                    <div>
+                      <h3 class="text-sm font-semibold text-amber-300 mb-1">Año <?= h($y === '----' ? 'Desconocido' : $y) ?> (<?= count($ops) ?>)</h3>
+                      <div class="space-y-1">
+                        <?php foreach ($ops as $op): ?>
+                          <p class="text-xs text-slate-200 leading-snug"><?= h($op['FechaE']) ?> <?= h($op['NumeroD']) ?> <?= h($op['OrdenC']) ?> <?= h(trim(($op['Notas1'] ?? '') . ' ' . ($op['Notas2'] ?? '') . ' ' . ($op['Notas3'] ?? '') . ' ' . ($op['Notas4'] ?? '') . ' ' . ($op['Notas5'] ?? '') . ' ' . ($op['Notas6'] ?? '') . ' ' . ($op['Notas7'] ?? ''))) ?></p>
+                        <?php endforeach; ?>
+                      </div>
+                    </div>
+                  <?php endforeach; ?>
+                <?php else: ?>
+                  <p class="text-slate-300 text-sm">Sin transacciones recientes...</p>
+                <?php endif; ?>
+              </div>
             <?php endif; ?>
-            <div class="mt-2 max-h-72 overflow-y-auto pr-2 space-y-1">
-              <?php if ($operations): ?>
-                <?php foreach ($operations as $op): ?>
-                  <p class="text-xs text-slate-200 leading-snug"><?= h($op['FechaE']) ?> <?= h($op['NumeroD']) ?> <?= h($op['OrdenC']) ?> <?= h(trim(($op['Notas1'] ?? '') . ' ' . ($op['Notas2'] ?? '') . ' ' . ($op['Notas3'] ?? '') . ' ' . ($op['Notas4'] ?? '') . ' ' . ($op['Notas5'] ?? '') . ' ' . ($op['Notas6'] ?? '') . ' ' . ($op['Notas7'] ?? ''))) ?></p>
-                <?php endforeach; ?>
-              <?php else: ?>
-                <p class="text-slate-300 text-sm">Sin transacciones <?= $year !== null ? 'en el año ' . h($year) : 'recientes' ?>...</p>
-              <?php endif; ?>
-            </div>
           </div>
           <div class="flex gap-3 mt-6 flex-wrap">
             <?php if ($hasHistoric): ?>

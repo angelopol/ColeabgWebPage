@@ -70,10 +70,12 @@ class OperationsRepository {
     public function operationsByClient(string $cedulaOrId3, ?int $year = null): array {
         $like = "%$cedulaOrId3%";
         if ($year !== null) {
-            $sql = 'SELECT * FROM SAFACT WHERE (CodClie LIKE ? OR ID3 LIKE ?) AND FechaE LIKE ? ORDER BY FechaE';
+            // Order newest first
+            $sql = 'SELECT * FROM SAFACT WHERE (CodClie LIKE ? OR ID3 LIKE ?) AND FechaE LIKE ? ORDER BY FechaE DESC';
             $params = [$like, $like, "%$year%"];
         } else {
-            $sql = 'SELECT * FROM SAFACT WHERE CodClie LIKE ? OR ID3 LIKE ? ORDER BY FechaE';
+            // Recent operations: newest first (descending date)
+            $sql = 'SELECT * FROM SAFACT WHERE CodClie LIKE ? OR ID3 LIKE ? ORDER BY FechaE DESC';
             $params = [$like, $like];
         }
         $st = $this->db->prepare($sql);
@@ -93,7 +95,7 @@ class OperationsRepository {
 
     public function allOperations(string $cedulaOrId3): array {
         $like = "%$cedulaOrId3%";
-    $st = $this->db->prepare('SELECT * FROM SAFACT WHERE CodClie LIKE ? OR ID3 LIKE ? ORDER BY FechaE');
+    $st = $this->db->prepare('SELECT * FROM SAFACT WHERE CodClie LIKE ? OR ID3 LIKE ? ORDER BY FechaE DESC');
     $st->bindValue(1, $like, PDO::PARAM_STR);
     $st->bindValue(2, $like, PDO::PARAM_STR);
         $st->execute();
@@ -102,7 +104,7 @@ class OperationsRepository {
 
     public function allOperationsSAACXCByClient(string $codClie): array {
         $like = "%$codClie%";
-        $st = $this->db->prepare('SELECT * FROM SAACXC WHERE CodClie LIKE ? ORDER BY FechaE');
+        $st = $this->db->prepare('SELECT * FROM SAACXC WHERE CodClie LIKE ? ORDER BY FechaE DESC');
         $st->bindValue(1, $like, PDO::PARAM_STR);
         $st->execute();
         return $st->fetchAll();
@@ -111,10 +113,10 @@ class OperationsRepository {
     public function operationsByInpre(string $codClie, ?int $year = null): array {
         $like = "%$codClie%";
         if ($year !== null) {
-            $sql = 'SELECT * FROM SAFACT WHERE (CodClie LIKE ? OR ID3 LIKE ?) AND FechaE LIKE ? ORDER BY FechaE';
+            $sql = 'SELECT * FROM SAFACT WHERE (CodClie LIKE ? OR ID3 LIKE ?) AND FechaE LIKE ? ORDER BY FechaE DESC';
             $params = [$like, $like, "%$year%"];
         } else {
-            $sql = 'SELECT * FROM SAFACT WHERE CodClie LIKE ? OR ID3 LIKE ? ORDER BY FechaE';
+            $sql = 'SELECT * FROM SAFACT WHERE CodClie LIKE ? OR ID3 LIKE ? ORDER BY FechaE DESC';
             $params = [$like, $like];
         }
         $st = $this->db->prepare($sql);
