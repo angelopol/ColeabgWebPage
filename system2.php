@@ -29,8 +29,9 @@ $insc = null; $solv = null; $ops = []; $groupedRecent = []; $hasHistoric = false
 if ($lawyer) {
   $insc = $lawRepo->getInscriptionData($lawyer['CodClie']);
   $solv = $lawyer['Solvente'] ?? null;
-  $ops = $opsRepo->operationsByClient($input, $year);
-  $hasHistoric = $opsRepo->anyOperationHistoric($input);
+  $canonicalCod = $lawyer['CodClie'] ?? $input;
+  $ops = $opsRepo->operationsByClient($canonicalCod, $year);
+  $hasHistoric = $opsRepo->anyOperationHistoric($canonicalCod);
   if ($year === null) {
     $byYear = [];
     foreach ($ops as $op) {
@@ -129,7 +130,7 @@ if ($lawyer) {
         </div>
         <div class="flex gap-3 mt-6 flex-wrap">
           <?php if ($hasHistoric): ?>
-            <a href="all.php?ci=<?= h(urlencode($input)) ?>&ip=0" class="bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium px-4 py-2 rounded">Todas las operaciones</a>
+            <a href="all.php?ci=<?= h(urlencode($canonicalCod)) ?>&ip=0" class="bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium px-4 py-2 rounded">Todas las operaciones</a>
           <?php endif; ?>
           <a href="search2.php" class="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium px-4 py-2 rounded">Nueva búsqueda</a>
           <form action="index.php"><button type="submit" class="bg-amber-500 hover:bg-amber-400 text-white text-sm font-medium px-4 py-2 rounded">Salir</button></form>
