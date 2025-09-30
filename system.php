@@ -15,17 +15,25 @@ $db = db();
 $lawRepo = new LawyerRepository($db);
 $opsRepo = new OperationsRepository($db);
 
-// Determine lawyer record (prefer exact CodClie equality, else ID3)
-// Attempt direct (pattern) matches; gather potential multiples
-$primaryMatch = $lawRepo->findByCedula($input);
-if (!$primaryMatch) {
-  $primaryMatch = $lawRepo->findById3($input);
-}
-// Always search broader to allow user disambiguation if more than one
-$candidates = $lawRepo->findByCedulaOrId3Like($input);
-// If we have an exact-like match and more than one candidate, we'll present selection.
-$multiple = count($candidates) > 1;
+// Determine lawyer record.
+// If the user likely searched by Inpre (numeric short), prefer Clase matches first to avoid being preempted by partial Cedula matches.
 $lawyer = null;
+$candidates = [];
+$isLikelyInpre = preg_match('/^\d{3,7}$/', $input); // Inpre typically shorter numeric (tweak if needed)
+if ($isLikelyInpre) {
+  // try exact Clase, then LIKE Clase candidates
+  $primaryMatch = $lawRepo->findByInpre($input);
+  if ($primaryMatch) { $lawyer = $primaryMatch; }
+  $candidates = $lawRepo->findByClaseLike($input);
+}
+// Fallback: search by Cedula/ID3 patterns
+if (!$lawyer) {
+  $primaryMatch = $lawRepo->findByCedula($input);
+  if (!$primaryMatch) { $primaryMatch = $lawRepo->findById3($input); }
+  if (empty($candidates)) { $candidates = $lawRepo->findByCedulaOrId3Like($input); }
+}
+// If we have multiple candidates, show selection
+$multiple = count($candidates) > 1;
 
 // If user selected a specific CodClie via query param choose that.
 $selected = $_GET['cod'] ?? null;

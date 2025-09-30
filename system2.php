@@ -12,11 +12,20 @@ $db = db();
 $lawRepo = new LawyerRepository($db);
 $opsRepo = new OperationsRepository($db);
 
-$primaryMatch = $lawRepo->findByCedula($input);
-if (!$primaryMatch) { $primaryMatch = $lawRepo->findById3($input); }
-$candidates = $lawRepo->findByCedulaOrId3Like($input);
-$multiple = count($candidates) > 1;
 $lawyer = null;
+$candidates = [];
+$isLikelyInpre = preg_match('/^\d{3,7}$/', $input);
+if ($isLikelyInpre) {
+  $primaryMatch = $lawRepo->findByInpre($input);
+  if ($primaryMatch) { $lawyer = $primaryMatch; }
+  $candidates = $lawRepo->findByClaseLike($input);
+}
+if (!$lawyer) {
+  $primaryMatch = $lawRepo->findByCedula($input);
+  if (!$primaryMatch) { $primaryMatch = $lawRepo->findById3($input); }
+  if (empty($candidates)) { $candidates = $lawRepo->findByCedulaOrId3Like($input); }
+}
+$multiple = count($candidates) > 1;
 $selected = $_GET['cod'] ?? null;
 if ($selected) {
   foreach ($candidates as $c) {

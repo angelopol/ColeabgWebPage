@@ -57,9 +57,20 @@ class LawyerRepository {
     }
 
     public function findByInpre(string $inpre): ?array {
-    // Use LIKE with automatic wildcards on Clase
+    // Try exact match first (preferred when user is searching by Inpre), then fall back to LIKE
+    $exact = $this->fetchOne("SELECT TOP 1 * FROM SACLIE WHERE Clase = ?", [$inpre], 'findByInpre_exact');
+    if ($exact) return $exact;
     $pattern = "%$inpre%";
-    return $this->fetchOne("SELECT TOP 1 * FROM SACLIE WHERE Clase LIKE ?", [$pattern], 'findByInpre');
+    return $this->fetchOne("SELECT TOP 1 * FROM SACLIE WHERE Clase LIKE ?", [$pattern], 'findByInpre_like');
+    }
+
+    public function findByClaseLike(string $needle): array {
+        $sql = "SELECT * FROM SACLIE WHERE Clase LIKE ?";
+        $like = "%$needle%";
+        $st = $this->db->prepare($sql);
+        $st->bindValue(1, $like, PDO::PARAM_STR);
+        $st->execute();
+        return $st->fetchAll();
     }
 }
 
