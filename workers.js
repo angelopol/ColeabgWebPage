@@ -1,6 +1,13 @@
 const funcionInit = () => {
-	if (!"geolocation" in navigator) {
-		return alert("Tu navegador no soporta el acceso a la ubicación. Intenta con otro");
+	if (!('geolocation' in navigator)) {
+		// If geolocation is not available, disable action buttons and inform the user
+		const $btnIniciarFail = document.querySelector('#btnIniciar');
+		const $btnDetenerFail = document.querySelector('#btnDetener');
+		const $messageFail = document.querySelector('#message');
+		if ($btnIniciarFail) $btnIniciarFail.disabled = true;
+		if ($btnDetenerFail) $btnDetenerFail.disabled = true;
+		if ($messageFail) $messageFail.innerText = 'Tu navegador no soporta el acceso a la ubicación. Intenta con otro o usa la app móvil.';
+		return;
 	}
 
 	let idWatcher = null;
@@ -10,89 +17,57 @@ const funcionInit = () => {
         $latitud = document.querySelector("#latitud"),
 		$longitud = document.querySelector("#longitud"),
 		$message = document.querySelector("#message"),
-		$user = document.querySelector('body').getAttribute('data-temp');
+	// Prefer data-temp (set server-side), fallback to data-user
+	$user = (document.body.getAttribute('data-temp') || document.body.getAttribute('data-user') || '').toLowerCase();
 
 	
 
 	const onUbicacionConcedida = ubicacion => {
 		const coordenadas = ubicacion.coords;
 
-		if (coordenadas.latitude > 10.2244 && coordenadas.latitude < 10.2248 && coordenadas.longitude < -68.0056 && coordenadas.longitude > -68.0066) {
-
+		// Default campus bounding box (tune values). Note longitude min should be the more negative value.
+		if (coordenadas.latitude > 10.2244 && coordenadas.latitude < 10.2248 && coordenadas.longitude > -68.0066 && coordenadas.longitude < -68.0056) {
 			$btnIniciar.disabled = false;
 			$btnDetener.disabled = false;
-
 			$latitud.innerText = coordenadas.latitude;
 			$longitud.innerText = coordenadas.longitude;
-
-			$message.innerText = "";
-
+			$message.innerText = '';
 		} else {
 
 			switch ($user) {
 
-				case 'gilda sosa':
+				// No unconditional bypasses: users must be inside defined areas to enable buttons.
 
-					$btnIniciar.disabled = false;
-					$btnDetener.disabled = false;
-		
-					$latitud.innerText = coordenadas.latitude;
-					$longitud.innerText = coordenadas.longitude;
-		
-					$message.innerText = "";
-					
-					break;
-
-				case 'Jesus ramirez':
-
-					if (coordenadas.latitude > 10.2214 && coordenadas.latitude < 10.2258 && coordenadas.longitude < -68.0047 && coordenadas.longitude > -68.0075) {
-
+				case 'jesus ramirez':
+					if (coordenadas.latitude > 10.2214 && coordenadas.latitude < 10.2258 && coordenadas.longitude > -68.0075 && coordenadas.longitude < -68.0047) {
 						$btnIniciar.disabled = false;
 						$btnDetener.disabled = false;
-			
 						$latitud.innerText = coordenadas.latitude;
 						$longitud.innerText = coordenadas.longitude;
-			
-						$message.innerText = "";
-					
+						$message.innerText = '';
 					} else {
-
 						$btnIniciar.disabled = true; 
 						$btnDetener.disabled = true; 
-
 						$latitud.innerText = coordenadas.latitude;
 						$longitud.innerText = coordenadas.longitude;
-
-						$message.innerText = "No se encuentra cerca del Colegio de Abogados del Estado Carabobo";
-
+						$message.innerText = 'No se encuentra cerca del Colegio de Abogados del Estado Carabobo';
 					}
-					
 					break;
 
-				case 'Francisco colina':
-
-					if (coordenadas.latitude > 10.2214 && coordenadas.latitude < 10.2258 && coordenadas.longitude < -68.0047 && coordenadas.longitude > -68.0075) {
-
+				case 'francisco colina':
+					if (coordenadas.latitude > 10.2214 && coordenadas.latitude < 10.2258 && coordenadas.longitude > -68.0075 && coordenadas.longitude < -68.0047) {
 						$btnIniciar.disabled = false;
 						$btnDetener.disabled = false;
-			
 						$latitud.innerText = coordenadas.latitude;
 						$longitud.innerText = coordenadas.longitude;
-			
-						$message.innerText = "";
-					
+						$message.innerText = '';
 					} else {
-
 						$btnIniciar.disabled = true; 
 						$btnDetener.disabled = true; 
-
 						$latitud.innerText = coordenadas.latitude;
 						$longitud.innerText = coordenadas.longitude;
-
-						$message.innerText = "No se encuentra cerca del Colegio de Abogados del Estado Carabobo";
-
+						$message.innerText = 'No se encuentra cerca del Colegio de Abogados del Estado Carabobo';
 					}
-					
 					break;
 			
 				default:
@@ -111,10 +86,13 @@ const funcionInit = () => {
 		}
 	}
 
-    const onErrorDeUbicacion = err => {
-
-		$latitud.innerText = "Error obteniendo ubicación: " + err.message;
-		$longitud.innerText = "Error obteniendo ubicación: " + err.message;
+	const onErrorDeUbicacion = err => {
+		// If permissions policy or browser blocks geolocation, show clear message and disable buttons
+		if ($btnIniciar) $btnIniciar.disabled = true;
+		if ($btnDetener) $btnDetener.disabled = true;
+		$latitud.innerText = 'Error obteniendo ubicación: ' + err.message;
+		$longitud.innerText = 'Error obteniendo ubicación: ' + err.message;
+		$message.innerText = 'Activa la localización en tu navegador y permite el acceso cuando se solicite.';
 	}
 
 	const opcionesDeSolicitud = {
@@ -131,13 +109,8 @@ const funcionInit = () => {
 	}
 
 	
-	$btnIniciar.addEventListener("click", () => {
-		window.location.href = "assist1.php";
-	});
-
-	$btnDetener.addEventListener("click", () => {
-        window.location.href = "assist2.php";
-    });
+	$btnIniciar.addEventListener('click', () => { window.location.href = 'assist1.php'; });
+	$btnDetener.addEventListener('click', () => { window.location.href = 'assist2.php'; });
 
 	
 

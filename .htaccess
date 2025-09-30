@@ -1,0 +1,12 @@
+# Enable Permissions-Policy and Feature-Policy for geolocation when running under Apache
+# Requires mod_headers enabled on the server. If your host disables .htaccess or mod_headers,
+# you must add the equivalent header in the server config (or hosting control panel).
+<IfModule mod_headers.c>
+    Header always set Permissions-Policy "geolocation=(self)"
+    Header always set Feature-Policy "geolocation 'self'"
+</IfModule>
+
+# If you don't have control of server headers, you can also set in PHP before output (already present in workers.php):
+# header('Permissions-Policy: geolocation=(self)');
+# Note: Chrome will still block geolocation if the document is embedded in a cross-origin <iframe>
+# unless the parent uses the allow attribute (see notes below).

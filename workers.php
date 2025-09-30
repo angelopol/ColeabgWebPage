@@ -1,9 +1,14 @@
 <?php
 require_once __DIR__ . '/src/bootstrap.php';
 require_once __DIR__ . '/src/layout.php';
-session_start();
+// Start session only if not already active to avoid PHP Notice when bootstrap/layout started it earlier
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    session_start();
+}
 if (!isset($_COOKIE['user'])) { header('Location: ingre_workers.php'); exit; }
 $_SESSION['assist'] = 1;
+// Allow geolocation via Permissions-Policy header (must be sent before any output). Some hosts may override headers; adjust if needed.
+header('Permissions-Policy: geolocation=(self)');
 render_header('Asistencia', 'domo.jpg');
 $username = h($_COOKIE['user']);
 ?>
@@ -30,5 +35,11 @@ $username = h($_COOKIE['user']);
         </div>
     </div>
 </div>
+<script>
+// Ensure the username is available on body for the script (some layouts attach data to a container element)
+document.addEventListener('DOMContentLoaded', function(){
+    try { document.body.setAttribute('data-temp', <?= json_encode($username) ?>); } catch (e) {}
+});
+</script>
 <script src="workers.js"></script>
 <?php render_footer(); ?>
