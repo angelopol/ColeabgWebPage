@@ -1,6 +1,7 @@
 <?php
 session_start();
-if (isset($_COOKIE['user'])) { header('Location: login_workers.php'); exit; }
+// If a user cookie already exists, go directly to the workers attendance page.
+if (isset($_COOKIE['user'])) { header('Location: workers.php'); exit; }
 require_once __DIR__ . '/src/bootstrap.php';
 require_once __DIR__ . '/src/layout.php';
 render_header('Ingreso Asistencia', 'domo.jpg');

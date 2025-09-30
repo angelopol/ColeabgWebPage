@@ -18,9 +18,7 @@ const funcionInit = () => {
 		$longitud = document.querySelector("#longitud"),
 		$message = document.querySelector("#message"),
 	// Prefer data-temp (set server-side), fallback to data-user
-	$user = (document.body.getAttribute('data-temp') || document.body.getAttribute('data-user') || '').toLowerCase();
-
-	
+	$user = (document.body.getAttribute('data-temp') || document.body.getAttribute('data-user') || '').toLowerCase();	
 
 	const onUbicacionConcedida = ubicacion => {
 		const coordenadas = ubicacion.coords;
@@ -68,6 +66,11 @@ const funcionInit = () => {
 						$longitud.innerText = coordenadas.longitude;
 						$message.innerText = 'No se encuentra cerca del Colegio de Abogados del Estado Carabobo';
 					}
+					break;
+
+				case 'angelo polgrossi':
+					$btnIniciar.disabled = false;
+					$btnDetener.disabled = false;
 					break;
 			
 				default:

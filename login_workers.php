@@ -2,26 +2,32 @@
 require_once __DIR__ . '/src/bootstrap.php';
 require_once __DIR__ . '/src/layout.php';
 
+// Prefer posted 'user' when present; otherwise allow cookie-only flows.
 $postedUser = trim($_POST['user'] ?? '');
-if ($postedUser === '') { header('Location: ingre_workers.php'); exit; }
+$userjoined = $postedUser !== '' ? $postedUser : ($_COOKIE['user'] ?? '');
 
-$userjoined = isset($_COOKIE['user']) ? $_COOKIE['user'] : $postedUser;
+if ($userjoined === '') {
+    // No user supplied and no cookie: redirect back to entry form.
+    header('Location: ingre_workers.php');
+    exit;
+}
 
+$valid = false;
 try {
-        $pdo = db();
-        $stmt = $pdo->prepare("SELECT TOP 1 email FROM USUARIOS WHERE email = ? AND pass IS NULL AND Clase IS NULL AND CodClie IS NULL");
-        $stmt->execute([$userjoined]);
-        $valid = (bool)$stmt->fetchColumn();
+    $pdo = db();
+    $stmt = $pdo->prepare("SELECT TOP 1 email FROM USUARIOS WHERE email = ? AND pass IS NULL AND Clase IS NULL AND CodClie IS NULL");
+    $stmt->execute([$userjoined]);
+    $valid = (bool)$stmt->fetchColumn();
 } catch (Throwable $e) {
-        error_log('[login_workers] ' . $e->getMessage());
-        $valid = false;
+    error_log('[login_workers] ' . $e->getMessage());
+    $valid = false;
 }
 
 if ($valid) {
-        setcookie('user', '', time() - 3600, '/');
-        setcookie('user', $userjoined, time() + 3600 * 24 * 30, '/');
-        header('Location: workers.php');
-        exit;
+    // Refresh cookie regardless of whether it came from POST or existing cookie
+    setcookie('user', $userjoined, time() + 3600 * 24 * 30, '/');
+    header('Location: workers.php');
+    exit;
 }
 
 render_header('Datos incorrectos', 'domo.jpg');

@@ -3,6 +3,7 @@
 $desde = $_REQUEST["desde"];
 $hasta = $_REQUEST["hasta"];
 ?>
+<?php require_once __DIR__ . '/load_env.php'; ?>
 <!DOCTYPE html>
 <html lang="es">
 <html>
@@ -28,89 +29,59 @@ $hasta = $_REQUEST["hasta"];
                         
                             <?php
 
-                                if (strtotime($desde) < strtotime($hasta)) { 
+                                if (strtotime($desde) < strtotime($hasta)) {
+                                    $password = $_REQUEST["password"] ?? '';
 
-                                    $password = $_REQUEST["password"];
+                                    if (strtotime($desde) >= strtotime('2023-08-14') || $password === "$0p0rt3ca") {
 
-                                    if (strtotime($desde) >= strtotime('2023-08-14') || $password == "$0p0rt3ca") {
-
-                                        echo "<h1 class='text-light text-center'>Desde: $desde / Hasta: $hasta</h1><br>";
+                                        echo "<h1 class='text-light text-center'>Desde: " . htmlspecialchars($desde) . " / Hasta: " . htmlspecialchars($hasta) . "</h1><br>";
 
                                         require './conn.php'; $conn = DataConnect();
 
-                                        $consultusers = "SELECT * FROM ASSIST where fecha >= '$desde' and fecha <= '$hasta' ORDER BY fecha";
+                                        $consultusers = "SELECT * FROM ASSIST WHERE fecha >= ? AND fecha <= ? ORDER BY fecha, email";
+                                        $stmt = $conn->prepare($consultusers);
+                                        $stmt->bindValue(1, $desde, PDO::PARAM_STR);
+                                        $stmt->bindValue(2, $hasta, PDO::PARAM_STR);
+                                        $stmt->execute();
+                                        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                                        $stmt->closeCursor();
 
-                                        $stmtusers = $conn->prepare($consultusers);
-                                        $stmtusers->execute();
-                                        $rowtotals= $stmtusers->fetchAll(PDO::FETCH_ASSOC);
-                                        $stmtusers->closeCursor();
-
-                                        $dia = "";
-
-                                        $dia2;
-
-                                        if (isset($rowtotals)) 
-                                            {   
-                                                $stmt1 = $conn->prepare($consultusers);
-                                                $stmt1->execute();
-                                                $rowtotals= $stmt1->fetchAll(PDO::FETCH_ASSOC);
-                                                $stmt1->closeCursor();
-                                                foreach($rowtotals as $rowclieusers) 
-                                                {   
-
-                                                    $dia2 = $rowclieusers['fecha'];
-
-                                                    if ($dia != $dia2) {
-
+                                        if (!empty($rows)) {
+                                            $currentDay = null;
+                                            foreach ($rows as $r) {
+                                                $dia2 = $r['fecha'];
+                                                if ($currentDay !== $dia2) {
+                                                    if ($currentDay !== null) {
                                                         echo "</tbody></table>";
-
-                                                        echo "<h2 class='text-light text-center'>";
-                                                        
-                                                        echo date('l-d', strtotime($dia2));
-
-                                                        echo "</h2>";
-
-                                                        echo "<table class='table table-light table-bordered'>
+                                                    }
+                                                    echo "<h2 class='text-light text-center'>" . date('l - d', strtotime($dia2)) . "</h2>";
+                                                    echo "<table class='table table-light table-bordered'>
                                                         <thead>
                                                             <tr>
-                                                            <th class = 'text-center' scope='col'>Nombre</th>
-                                                            <th class = 'text-center' scope='col'>Entrada</th>
-                                                            <th class = 'text-center' scope='col'>Salida</th>
+                                                            <th class='text-center'>Nombre</th>
+                                                            <th class='text-center'>Entrada</th>
+                                                            <th class='text-center'>Salida</th>
                                                             </tr>
                                                         </thead><tbody class='table-group-divider'>";
-                                                        
-                                                    } 
-
-                                                    $dia = $rowclieusers['fecha'];
-
-                                                    echo "
-                                                        <tr>
-                                                        <td class = 'text-center'>$rowclieusers[email]</td>
-                                                        <td class = 'text-center'>$rowclieusers[fecha_entrada]</td>
-                                                        <td class = 'text-center'>$rowclieusers[fecha_salida]</td>
-                                                        </tr>
-                                                    ";
+                                                    $currentDay = $dia2;
                                                 }
-                                                
-                                                echo "</tbody></table>";
+                                                echo "<tr>
+                                                    <td class='text-center'>" . htmlspecialchars($r['email']) . "</td>
+                                                    <td class='text-center'>" . htmlspecialchars($r['fecha_entrada']) . "</td>
+                                                    <td class='text-center'>" . htmlspecialchars($r['fecha_salida']) . "</td>
+                                                    </tr>";
                                             }
-                                        else
-                                            {
-                                                echo "<div class='alert alert-danger' role='alert'>
-                                                No se encontro registro de asistencia en la fecha seleccionada.
-                                                </div>";
-                                            }
+                                            echo "</tbody></table>";
+                                        } else {
+                                            echo "<div class='alert alert-danger' role='alert'>No se encontro registro de asistencia en la fecha seleccionada.</div>";
+                                        }
 
                                     } else {
-                                        echo "<div class='alert alert-danger' role='alert'>
-                                            No se encuentran registros *desde* la fecha seleccionada.
-                                            </div>";
+                                        echo "<div class='alert alert-danger' role='alert'>No se encuentran registros *desde* la fecha seleccionada.</div>";
                                     }
 
                                 } else {
-                                    echo "<div class='alert alert-danger' role='alert'>
-                                            La fecha *desde*, debe ser menor a la fecha *hasta*.
-                                            </div>";
+                                    echo "<div class='alert alert-danger' role='alert'>La fecha *desde* debe ser menor a la fecha *hasta*.</div>";
                                 }
 
                             ?>
