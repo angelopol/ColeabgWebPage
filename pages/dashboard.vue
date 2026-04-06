@@ -54,7 +54,7 @@ onMounted(async () => {
 
       <p v-if="pending" class="text-sm text-slate-200">Cargando operaciones...</p>
       <p v-else-if="error" class="text-sm text-rose-100">No se pudieron cargar las operaciones.</p>
-      <p v-else-if="!data.rows.length" class="text-sm text-slate-200">No hay operaciones recientes para este ano.</p>
+      <p v-else-if="!data.rows.length" class="text-sm text-slate-200">No hay operaciones recientes para este año.</p>
 
       <ul v-else class="space-y-3">
         <li

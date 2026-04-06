@@ -173,7 +173,7 @@ onMounted(async () => {
         <p class="text-xs uppercase tracking-[0.25em] text-sand-200">Consulta Publica</p>
         <h1 class="mt-2 text-4xl text-white">Verificar Operaciones</h1>
         <p class="mt-3 text-sm text-slate-200">
-          Busca por cedula, Inpre o identificador y opcionalmente filtra por ano.
+          Busca por cedula, Inpre o identificador y opcionalmente filtra por año.
         </p>
 
         <form class="mt-6 grid gap-4 md:grid-cols-[2fr,1fr,auto]" @submit.prevent="fetchDetails()">
@@ -190,7 +190,7 @@ onMounted(async () => {
             min="1990"
             :max="new Date().getFullYear() + 1"
             class="field"
-            placeholder="Ano (opcional)"
+            placeholder="Año (opcional)"
           />
           <button class="btn-primary" :disabled="pending" type="submit">
             {{ pending ? 'Buscando...' : 'Buscar' }}
@@ -260,7 +260,7 @@ onMounted(async () => {
             :key="group.year"
             class="rounded-2xl border border-white/10 bg-white/10 p-4"
           >
-            <h3 class="text-xl text-sand-100">Ano {{ group.year }} ({{ group.items.length }})</h3>
+            <h3 class="text-xl text-sand-100">Año {{ group.year }} ({{ group.items.length }})</h3>
             <ul class="mt-3 space-y-2 text-sm">
               <li
                 v-for="(row, idx) in group.items"

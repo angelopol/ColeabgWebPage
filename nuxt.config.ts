@@ -50,6 +50,7 @@ export default defineNuxtConfig({
     dbPort: Number(process.env.DB_PORT || 1433),
     dbName: process.env.DB_NAME || '',
     solvenciaPassword: process.env.SOLVENCIA_PSSWD || '',
+    soportePassword: process.env.SOPORTE_PSSWD || '',
     dbEncrypt: (process.env.DB_ENCRYPT || 'false') === 'true',
     dbTrustServerCertificate:
       (process.env.DB_TRUST_SERVER_CERTIFICATE || 'true') === 'true',
