@@ -1,2 +1,14 @@
-conn.php
+# Entorno / secretos
 .env
+.env.*.local
+
+# Nuxt
+node_modules/
+.nuxt/
+.output/
+dist/
+*.log
+
+# Legacy sensible
+legacy/.env
+legacy/conn.php
