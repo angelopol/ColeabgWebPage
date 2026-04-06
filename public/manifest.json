@@ -1,0 +1,24 @@
+{
+  "name": "Colegio de Abogados del Estado Carabobo",
+  "short_name": "Colegio Abogados",
+  "description": "Portal institucional para consulta de operaciones, solvencias y servicios del Colegio de Abogados del Estado Carabobo.",
+  "lang": "es-VE",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#4d1a33",
+  "theme_color": "#5f213e",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/logo.png",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

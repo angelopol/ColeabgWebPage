@@ -93,5 +93,6 @@ declare function onMounted(callback: any): void
 declare function onBeforeUnmount(callback: any): void
 declare function useAuth(): any
 declare function defineNuxtPlugin(plugin: any): any
+declare function defineNuxtRouteMiddleware(handler: any): any
 
 declare const $fetch: <T = any>(request: any, options?: any) => Promise<T>

@@ -1,4 +1,8 @@
 <script setup lang="ts">
+definePageMeta({
+  middleware: 'solvencia'
+})
+
 const route = useRoute()
 
 const source = computed(() => {

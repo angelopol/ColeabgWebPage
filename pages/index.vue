@@ -1,63 +1,49 @@
 <script setup lang="ts">
 const { user } = useAuth()
-
-const modules = [
-  {
-    title: 'Consulta de Operaciones',
-    description: 'Busqueda por cedula o Inpre con historial reciente y detalle anual.',
-    to: '/search'
-  },
-  {
-    title: 'Area de Afiliados',
-    description: 'Acceso al dashboard personal, operaciones y cambio de contrasena.',
-    to: '/auth/login'
-  },
-  {
-    title: 'Control Administrativo',
-    description: 'Panel de incidencias, duplicados y registro de solvencias.',
-    to: '/admin'
-  },
-  {
-    title: 'Asistencia de Trabajadores',
-    description: 'Registro de entrada y salida con validacion por geolocalizacion.',
-    to: '/workers'
-  }
-]
 </script>
 
 <template>
-  <section class="grid gap-8 lg:grid-cols-[1.2fr,0.8fr]">
-    <div class="panel relative overflow-hidden">
-      <div class="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-sand-300/25 blur-3xl" />
-      <p class="mb-3 text-sm uppercase tracking-[0.25em] text-sand-200">Plataforma Unificada</p>
-      <h1 class="max-w-2xl text-4xl leading-tight text-white md:text-6xl">
-        Colegio de Abogados del Estado Carabobo
+  <section class="relative min-h-[calc(100vh-68px)] overflow-hidden">
+    <img
+      src="/entrada.jpg"
+      alt="Colegio de Abogados del Estado Carabobo"
+      class="absolute inset-0 h-full w-full object-cover"
+    >
+    <div class="absolute inset-0 bg-gradient-to-b from-vino-900/55 via-vino-950/62 to-verde-900/68" />
+
+    <div class="relative flex min-h-[calc(100vh-68px)] flex-col items-center justify-center px-4 text-center backdrop-brightness-90">
+      <h1 class="text-4xl font-extrabold tracking-tight text-white md:text-6xl lg:text-7xl">
+        COLEGIO DE ABOGADOS DEL
       </h1>
-      <p class="mt-5 max-w-xl text-sm leading-relaxed text-slate-200 md:text-base">
-        Migracion completa a Nuxt full-stack: frontend en Vue + Tailwind y backend API para autenticacion,
-        operaciones, solvencias y asistencia.
+      <h1 class="mt-2 text-4xl font-extrabold tracking-tight text-white md:text-6xl lg:text-7xl">
+        ESTADO CARABOBO
+      </h1>
+      <p class="mt-8 max-w-2xl text-base text-vino-50 md:text-lg">
+        Portal institucional para verificacion de solvencias y operaciones.
       </p>
 
-      <div class="mt-7 flex flex-wrap gap-3">
+      <div class="mt-8 flex flex-wrap items-center justify-center gap-3">
         <NuxtLink to="/search" class="btn-primary">Consultar operaciones</NuxtLink>
-        <NuxtLink
-          :to="user ? '/dashboard' : '/auth/login'"
-          class="btn-secondary"
-        >
+        <NuxtLink :to="user ? '/dashboard' : '/auth/login'" class="btn-secondary">
           {{ user ? 'Ir al dashboard' : 'Ingresar al sistema' }}
         </NuxtLink>
       </div>
     </div>
 
-    <div class="grid gap-4">
-      <NuxtLink
-        v-for="item in modules"
-        :key="item.title"
-        :to="item.to"
-        class="panel block transition hover:-translate-y-0.5 hover:border-sand-300/40"
-      >
-        <h2 class="text-2xl text-sand-100">{{ item.title }}</h2>
-        <p class="mt-2 text-sm text-slate-200">{{ item.description }}</p>
+    <div class="fixed bottom-4 right-4 z-20">
+      <div class="mb-2 hidden max-w-xs rounded-xl border border-vino-200/40 bg-vino-50/95 p-4 shadow-xl sm:block">
+        <p class="text-sm font-semibold text-vino-900">
+          Necesitas ayuda? Pulsa el boton para contactar soporte.
+        </p>
+      </div>
+      <NuxtLink to="/support" class="block">
+        <img
+          src="/contact2.png"
+          alt="Soporte"
+          width="100"
+          height="100"
+          class="transition hover:scale-105"
+        >
       </NuxtLink>
     </div>
   </section>

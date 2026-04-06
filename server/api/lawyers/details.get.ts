@@ -8,6 +8,7 @@ import {
   operationsByClient
 } from '~/server/utils/repositories'
 import { operationNotes } from '~/server/utils/normalizers'
+import { requireSolvenciaAccess } from '~/server/utils/solvencia'
 
 const parseYear = (raw: string) => {
   if (!raw) {
@@ -25,6 +26,8 @@ const parseYear = (raw: string) => {
 }
 
 export default defineEventHandler(async (event) => {
+  requireSolvenciaAccess(event)
+
   const query = getQuery(event)
   const q = String(query.q || '').trim()
   const cod = String(query.cod || '').trim()

@@ -1,7 +1,10 @@
 import { allOperationsSAACXC, allOperationsSAFACT } from '~/server/utils/repositories'
 import { operationNotes } from '~/server/utils/normalizers'
+import { requireSolvenciaAccess } from '~/server/utils/solvencia'
 
 export default defineEventHandler(async (event) => {
+  requireSolvenciaAccess(event)
+
   const query = getQuery(event)
   const ci = String(query.ci || '').trim()
   const source = String(query.source || 'safact').toLowerCase()

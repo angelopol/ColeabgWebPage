@@ -3,8 +3,11 @@ import {
   findLawyerByInpre,
   findLawyersByNeedle
 } from '~/server/utils/repositories'
+import { requireSolvenciaAccess } from '~/server/utils/solvencia'
 
 export default defineEventHandler(async (event) => {
+  requireSolvenciaAccess(event)
+
   const query = getQuery(event)
   const q = String(query.q || '').trim()
 

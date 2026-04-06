@@ -13,6 +13,25 @@ export default defineNuxtConfig({
           name: 'description',
           content:
             'Plataforma oficial para consultas de operaciones, solvencias y asistencia de trabajadores.'
+        },
+        {
+          name: 'theme-color',
+          content: '#5f213e'
+        }
+      ],
+      link: [
+        {
+          rel: 'icon',
+          type: 'image/png',
+          href: '/favicon.png'
+        },
+        {
+          rel: 'apple-touch-icon',
+          href: '/logo.png'
+        },
+        {
+          rel: 'manifest',
+          href: '/manifest.json'
         }
       ]
     }
@@ -30,6 +49,7 @@ export default defineNuxtConfig({
     dbServer: process.env.DB_SERVER || '',
     dbPort: Number(process.env.DB_PORT || 1433),
     dbName: process.env.DB_NAME || '',
+    solvenciaPassword: process.env.SOLVENCIA_PSSWD || '',
     dbEncrypt: (process.env.DB_ENCRYPT || 'false') === 'true',
     dbTrustServerCertificate:
       (process.env.DB_TRUST_SERVER_CERTIFICATE || 'true') === 'true',

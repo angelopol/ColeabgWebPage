@@ -17,36 +17,60 @@ export default <Partial<Config>>{
       },
       colors: {
         ink: '#0f172a',
+        vino: {
+          50: '#f8f1f3',
+          100: '#f2e4e8',
+          200: '#e6c9d2',
+          300: '#d5a3b3',
+          400: '#bd748f',
+          500: '#a34d72',
+          600: '#8a375c',
+          700: '#74294b',
+          800: '#5f213e',
+          900: '#4d1a33'
+        },
+        verde: {
+          50: '#eefaf2',
+          100: '#d7f2df',
+          200: '#b3e4c1',
+          300: '#82cf98',
+          400: '#54b373',
+          500: '#369759',
+          600: '#277c47',
+          700: '#20633a',
+          800: '#1d4f31',
+          900: '#193f28'
+        },
         sea: {
-          50: '#eef6f7',
-          100: '#dbecef',
-          200: '#bad8df',
-          300: '#90c0cc',
-          400: '#5fa2b2',
-          500: '#3f8798',
-          600: '#336d7c',
-          700: '#2d5a67',
-          800: '#294b55',
-          900: '#264049'
+          50: '#eefaf2',
+          100: '#d7f2df',
+          200: '#b3e4c1',
+          300: '#82cf98',
+          400: '#54b373',
+          500: '#369759',
+          600: '#277c47',
+          700: '#20633a',
+          800: '#1d4f31',
+          900: '#193f28'
         },
         sand: {
-          50: '#fef8ec',
-          100: '#fbefcf',
-          200: '#f7df9e',
-          300: '#f1c966',
-          400: '#ebaf3a',
-          500: '#e19420',
-          600: '#c7721a',
-          700: '#a5501a',
-          800: '#86401d',
-          900: '#6f351b'
+          50: '#f8f1f3',
+          100: '#f2e4e8',
+          200: '#e6c9d2',
+          300: '#d5a3b3',
+          400: '#bd748f',
+          500: '#a34d72',
+          600: '#8a375c',
+          700: '#74294b',
+          800: '#5f213e',
+          900: '#4d1a33'
         }
       },
       boxShadow: {
         panel: '0 20px 45px -18px rgba(15, 23, 42, 0.35)'
       },
       backgroundImage: {
-        halo: 'radial-gradient(circle at top right, rgba(241, 201, 102, 0.25), transparent 45%), radial-gradient(circle at 20% 20%, rgba(95, 162, 178, 0.2), transparent 35%)'
+        halo: 'radial-gradient(circle at top right, rgba(163, 77, 114, 0.3), transparent 45%), radial-gradient(circle at 20% 20%, rgba(54, 151, 89, 0.26), transparent 35%)'
       }
     }
   }

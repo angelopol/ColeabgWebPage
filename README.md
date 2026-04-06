@@ -45,6 +45,10 @@ Aplicacion Nuxt 3 que reemplaza el sitio PHP legacy con:
 - `GET /api/operations/recent`
 - `GET /api/operations/list`
 
+### Acceso protegido de consulta
+- `GET /api/solvencia/status`
+- `POST /api/solvencia/access`
+
 ### Workers
 - `POST /api/workers/login`
 - `POST /api/workers/attendance/entry`
@@ -65,6 +69,7 @@ Aplicacion Nuxt 3 que reemplaza el sitio PHP legacy con:
 Copiar `.env.example` y completar valores reales:
 - `NUXT_SESSION_SECRET`
 - `DB_SERVER`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASS`
+- `SOLVENCIA_PSSWD` (clave unica para acceder al modulo de consulta de operaciones)
 - `DB_ENCRYPT`, `DB_TRUST_SERVER_CERTIFICATE`
 - `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`
 - `SUPPORT_EMAIL`
@@ -83,4 +88,5 @@ npm run dev
 - SQL Server se maneja desde `server/utils/db.ts` y `server/utils/repositories.ts`.
 - Las contrasenas legacy en texto plano se auto-migran a hash bcrypt al iniciar sesion.
 - La autenticacion usa cookie HTTP-only firmada (`server/utils/session.ts`).
+- El acceso a consulta de operaciones usa clave `SOLVENCIA_PSSWD` y guarda cookie firmada por 90 dias.
 - El diseno mantiene Tailwind pero con un sistema visual propio (sin plantilla generica).
