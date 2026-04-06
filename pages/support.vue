@@ -21,6 +21,7 @@ interface SupportReport {
   toDate: string
   deParte: string
   para: string
+  showActivityDate: boolean
   tasks: SupportTask[]
 }
 
@@ -148,7 +149,8 @@ const reportForm = reactive({
   fromDate: defaultFrom,
   toDate: defaultTo,
   deParte: 'Equipo de Soporte e Informatica',
-  para: 'Junta Directiva'
+  para: 'Junta Directiva',
+  showActivityDate: true
 })
 
 const bulkForm = reactive({
@@ -240,6 +242,27 @@ const buildReportHtml = (report: SupportReport) => {
     )
     .join('')
 
+  const titleListItems = report.tasks
+    .map((task) => `<li>${escapeHtml(task.title)}</li>`)
+    .join('')
+
+  const activitiesContent = report.showActivityDate
+    ? `<table>
+    <thead>
+      <tr>
+        <th>Actividad</th>
+        <th>Modulo</th>
+        <th>Fecha finalizada</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${rows || '<tr><td colspan="3">No se registraron actividades finalizadas en el rango indicado.</td></tr>'}
+    </tbody>
+  </table>`
+    : report.tasks.length
+      ? `<ul class="simple-list">${titleListItems}</ul>`
+      : '<p class="empty">No se registraron actividades finalizadas en el rango indicado.</p>'
+
   return `<!DOCTYPE html>
 <html lang="es">
 <head>
@@ -254,6 +277,9 @@ const buildReportHtml = (report: SupportReport) => {
     table { width: 100%; border-collapse: collapse; margin-top: 14px; font-size: 12px; }
     th, td { border: 1px solid #d1d5db; padding: 8px; vertical-align: top; text-align: left; }
     th { background: #f3f4f6; }
+    .simple-list { margin: 14px 0 0; padding-left: 22px; font-size: 13px; }
+    .simple-list li { margin: 6px 0; }
+    .empty { margin-top: 14px; font-size: 13px; color: #374151; }
     .footer { margin-top: 30px; font-size: 12px; }
     .signs { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-top: 36px; }
     .line { border-top: 1px solid #9ca3af; padding-top: 6px; }
@@ -267,21 +293,11 @@ const buildReportHtml = (report: SupportReport) => {
     <p><strong>Rango:</strong> ${escapeHtml(formatDate(report.fromDate))} al ${escapeHtml(formatDate(report.toDate))}</p>
     <p><strong>De parte:</strong> ${escapeHtml(report.deParte)}</p>
     <p><strong>Para:</strong> ${escapeHtml(report.para)}</p>
+    <p><strong>Formato:</strong> ${report.showActivityDate ? 'Con modulo y fecha' : 'Lista simple de titulos'}</p>
     <p><strong>Generado:</strong> ${escapeHtml(formatDateTime(report.generatedAt))}</p>
   </div>
 
-  <table>
-    <thead>
-      <tr>
-        <th>Actividad</th>
-        <th>Modulo</th>
-        <th>Fecha finalizada</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${rows || '<tr><td colspan="3">No se registraron actividades finalizadas en el rango indicado.</td></tr>'}
-    </tbody>
-  </table>
+  ${activitiesContent}
 
   <div class="footer">
     <p>Documento generado desde el modulo interno de soporte.</p>
@@ -574,7 +590,8 @@ const generateReport = async () => {
         fromDate: reportForm.fromDate,
         toDate: reportForm.toDate,
         deParte: reportForm.deParte,
-        para: reportForm.para
+        para: reportForm.para,
+        showActivityDate: reportForm.showActivityDate
       }
     })
 
@@ -686,7 +703,9 @@ const buildReportPdfBytes = (report: SupportReport) => {
   } else {
     for (const activity of report.tasks) {
       baseLines.push(
-        `- ${activity.title} | Modulo: ${activity.module || '-'} | Fecha finalizada: ${formatDate(activity.completedAt)}`
+        report.showActivityDate
+          ? `- ${activity.title} | Modulo: ${activity.module || '-'} | Fecha finalizada: ${formatDate(activity.completedAt)}`
+          : `- ${activity.title}`
       )
     }
   }
@@ -997,6 +1016,10 @@ onMounted(async () => {
             <p><strong>Rango:</strong> {{ formatDate(reportResult.fromDate) }} al {{ formatDate(reportResult.toDate) }}</p>
             <p><strong>De parte:</strong> {{ reportResult.deParte }}</p>
             <p><strong>Para:</strong> {{ reportResult.para }}</p>
+            <p>
+              <strong>Formato:</strong>
+              {{ reportResult.showActivityDate ? 'Con modulo y fecha' : 'Lista simple de titulos' }}
+            </p>
             <p><strong>Generado:</strong> {{ formatDateTime(reportResult.generatedAt) }}</p>
           </div>
 
@@ -1012,7 +1035,10 @@ onMounted(async () => {
             </button>
           </div>
 
-          <div class="max-h-72 overflow-y-auto rounded-xl border border-white/15 bg-black/20">
+          <div
+            v-if="reportResult.showActivityDate"
+            class="max-h-72 overflow-y-auto rounded-xl border border-white/15 bg-black/20"
+          >
             <table class="min-w-full text-left text-sm text-slate-100">
               <thead class="bg-black/35 text-xs uppercase tracking-wide text-slate-300">
                 <tr>
@@ -1038,6 +1064,20 @@ onMounted(async () => {
                 </tr>
               </tbody>
             </table>
+          </div>
+
+          <div
+            v-else
+            class="max-h-72 overflow-y-auto rounded-xl border border-white/15 bg-black/20 px-4 py-3"
+          >
+            <ul v-if="reportResult.tasks.length" class="list-disc space-y-2 pl-5 text-sm text-slate-100">
+              <li v-for="task in reportResult.tasks" :key="`report-simple-${task.id}`">
+                {{ task.title }}
+              </li>
+            </ul>
+            <p v-else class="text-sm text-slate-300">
+              No se registraron actividades finalizadas en este rango.
+            </p>
           </div>
         </div>
       </details>
@@ -1191,6 +1231,14 @@ onMounted(async () => {
             <input v-model="reportForm.toDate" type="date" class="field" required />
             <input v-model="reportForm.deParte" class="field" placeholder="De parte" required />
             <input v-model="reportForm.para" class="field" placeholder="Para" required />
+            <label class="md:col-span-2 flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-sm text-slate-100">
+              <input
+                v-model="reportForm.showActivityDate"
+                type="checkbox"
+                class="h-4 w-4 rounded border-white/30 bg-white/10"
+              />
+              Mostrar fecha de actividad (si se desmarca, el reporte sale en lista simple con solo titulos)
+            </label>
             <button class="btn-primary md:col-span-2" :disabled="reportPending" type="submit">
               {{ reportPending ? 'Generando...' : 'Generar reporte' }}
             </button>

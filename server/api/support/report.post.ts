@@ -8,7 +8,8 @@ const schema = z.object({
   fromDate: z.string().trim().regex(dateRegex),
   toDate: z.string().trim().regex(dateRegex),
   deParte: z.string().trim().min(2).max(200),
-  para: z.string().trim().min(2).max(200)
+  para: z.string().trim().min(2).max(200),
+  showActivityDate: z.boolean().optional().default(true)
 })
 
 export default defineEventHandler(async (event) => {
@@ -43,6 +44,7 @@ export default defineEventHandler(async (event) => {
       toDate,
       deParte: parsed.data.deParte,
       para: parsed.data.para,
+      showActivityDate: parsed.data.showActivityDate,
       tasks
     }
   }
