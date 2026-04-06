@@ -7,7 +7,6 @@ const dateRegex = /^\d{4}-\d{2}-\d{2}$/
 const schema = z.object({
   fromDate: z.string().trim().regex(dateRegex),
   toDate: z.string().trim().regex(dateRegex),
-  keyword: z.string().trim().max(220).optional().default(''),
   deParte: z.string().trim().min(2).max(200),
   para: z.string().trim().min(2).max(200)
 })
@@ -35,21 +34,15 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const tasks = await listCompletedTasksForReport(
-    fromDate,
-    toDate,
-    parsed.data.keyword || undefined
-  )
+  const tasks = await listCompletedTasksForReport(fromDate, toDate)
 
   return {
     report: {
       generatedAt: new Date().toISOString(),
       fromDate,
       toDate,
-      keyword: parsed.data.keyword || null,
       deParte: parsed.data.deParte,
       para: parsed.data.para,
-      totalTasks: tasks.length,
       tasks
     }
   }

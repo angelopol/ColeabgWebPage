@@ -19,10 +19,8 @@ interface SupportReport {
   generatedAt: string
   fromDate: string
   toDate: string
-  keyword: string | null
   deParte: string
   para: string
-  totalTasks: number
   tasks: SupportTask[]
 }
 
@@ -64,9 +62,9 @@ const filters = reactive<{
 const createForm = reactive({
   title: '',
   description: '',
-  keywords: '',
   module: '',
-  taskDate: defaultTo
+  taskDate: defaultTo,
+  markAsCompleted: false
 })
 
 const editForm = reactive<{
@@ -90,12 +88,20 @@ const editForm = reactive<{
 const reportForm = reactive({
   fromDate: defaultFrom,
   toDate: defaultTo,
-  keyword: '',
   deParte: 'Equipo de Soporte e Informatica',
   para: 'Junta Directiva'
 })
 
 const reportResult = ref<SupportReport | null>(null)
+
+const ui = reactive({
+  showCreateModal: false,
+  showFilterModal: false,
+  showReportModal: false,
+  showEditModal: false
+})
+
+const activeTaskTab = ref<SupportTaskStatus>('pendiente')
 
 const errorStatusCode = (error: unknown) => {
   const parsed = error as {
@@ -160,12 +166,10 @@ const escapeHtml = (value: string) => {
 const buildReportHtml = (report: SupportReport) => {
   const rows = report.tasks
     .map(
-      (task, index) =>
+      (task) =>
         `<tr>
-          <td>${index + 1}</td>
           <td>${escapeHtml(task.title)}</td>
           <td>${escapeHtml(task.module || '-')}</td>
-          <td>${escapeHtml(task.keywords || '-')}</td>
           <td>${escapeHtml(formatDate(task.completedAt))}</td>
         </tr>`
     )
@@ -192,38 +196,31 @@ const buildReportHtml = (report: SupportReport) => {
 </head>
 <body>
   <h1>Colegio de Abogados del Estado Carabobo</h1>
-  <h2>Reporte de tareas finalizadas del equipo de soporte</h2>
+  <h2>Reporte de actividades finalizadas del equipo de soporte</h2>
 
   <div class="meta">
     <p><strong>Rango:</strong> ${escapeHtml(formatDate(report.fromDate))} al ${escapeHtml(formatDate(report.toDate))}</p>
     <p><strong>De parte:</strong> ${escapeHtml(report.deParte)}</p>
     <p><strong>Para:</strong> ${escapeHtml(report.para)}</p>
     <p><strong>Generado:</strong> ${escapeHtml(formatDateTime(report.generatedAt))}</p>
-    <p><strong>Total de tareas finalizadas:</strong> ${report.totalTasks}</p>
   </div>
 
   <table>
     <thead>
       <tr>
-        <th>#</th>
-        <th>Tarea</th>
+        <th>Actividad</th>
         <th>Modulo</th>
-        <th>Keywords</th>
         <th>Fecha finalizada</th>
       </tr>
     </thead>
     <tbody>
-      ${rows || '<tr><td colspan="5">No se registraron tareas finalizadas en el rango indicado.</td></tr>'}
+      ${rows || '<tr><td colspan="3">No se registraron actividades finalizadas en el rango indicado.</td></tr>'}
     </tbody>
   </table>
 
   <div class="footer">
     <p>Documento generado desde el modulo interno de soporte.</p>
-  </div>
-
-  <div class="signs">
-    <div class="line">De parte: ${escapeHtml(report.deParte)}</div>
-    <div class="line">Para: ${escapeHtml(report.para)}</div>
+    <p>Saludos,<br>${escapeHtml(report.deParte)}</p>
   </div>
 </body>
 </html>`
@@ -234,6 +231,10 @@ const handleSupportAuthError = (error: unknown) => {
     return false
   }
 
+  ui.showCreateModal = false
+  ui.showFilterModal = false
+  ui.showReportModal = false
+  ui.showEditModal = false
   gate.granted = false
   gate.password = ''
   gate.error = 'Tu sesion de soporte vencio. Vuelve a ingresar la clave.'
@@ -253,12 +254,13 @@ const buildTaskQuery = () => {
 const resetCreateForm = () => {
   createForm.title = ''
   createForm.description = ''
-  createForm.keywords = ''
   createForm.module = ''
   createForm.taskDate = defaultTo
+  createForm.markAsCompleted = false
 }
 
 const cancelEdit = () => {
+  ui.showEditModal = false
   editForm.id = null
   editForm.title = ''
   editForm.description = ''
@@ -339,14 +341,15 @@ const createTask = async () => {
       method: 'POST',
       body: {
         title: createForm.title,
-        description: createForm.description,
-        keywords: createForm.keywords,
-        module: createForm.module,
-        taskDate: createForm.taskDate
+        description: createForm.description.trim() || undefined,
+        module: createForm.module.trim() || undefined,
+        taskDate: createForm.taskDate,
+        status: createForm.markAsCompleted ? 'finalizada' : 'pendiente'
       }
     })
 
     resetCreateForm()
+    ui.showCreateModal = false
     await loadTasks()
     actionMessage.value = 'Tarea creada correctamente.'
   } catch (error: unknown) {
@@ -361,6 +364,7 @@ const createTask = async () => {
 }
 
 const startEdit = (task: SupportTask) => {
+  ui.showEditModal = true
   editForm.id = task.id
   editForm.title = task.title
   editForm.description = task.description || ''
@@ -436,12 +440,14 @@ const toggleStatus = async (task: SupportTask) => {
 }
 
 const applyFilters = async () => {
+  ui.showFilterModal = false
   actionMessage.value = ''
   actionError.value = ''
   await loadTasks()
 }
 
 const clearFilters = async () => {
+  ui.showFilterModal = false
   filters.status = 'all'
   filters.fromDate = ''
   filters.toDate = ''
@@ -460,13 +466,13 @@ const generateReport = async () => {
       body: {
         fromDate: reportForm.fromDate,
         toDate: reportForm.toDate,
-        keyword: reportForm.keyword,
         deParte: reportForm.deParte,
         para: reportForm.para
       }
     })
 
     reportResult.value = response.report
+    ui.showReportModal = false
     actionMessage.value = 'Reporte generado correctamente.'
   } catch (error: unknown) {
     if (handleSupportAuthError(error)) {
@@ -508,17 +514,194 @@ const downloadReportDoc = () => {
   const url = window.URL.createObjectURL(blob)
   const link = window.document.createElement('a')
   link.href = url
-  link.download = `reporte-soporte-${reportResult.value.fromDate}-${reportResult.value.toDate}.doc`
+  link.download = `reporte-actividades-${reportResult.value.fromDate}-${reportResult.value.toDate}.doc`
   window.document.body.appendChild(link)
   link.click()
   link.remove()
   window.URL.revokeObjectURL(url)
 }
 
+const sanitizePdfText = (value: string) =>
+  value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^\x20-\x7E]/g, '')
+
+const escapePdfText = (value: string) =>
+  sanitizePdfText(value)
+    .replace(/\\/g, '\\\\')
+    .replace(/\(/g, '\\(')
+    .replace(/\)/g, '\\)')
+
+const wrapPdfLine = (line: string, maxChars = 92) => {
+  if (line.length <= maxChars) {
+    return [line]
+  }
+
+  const words = line.split(/\s+/)
+  const wrapped: string[] = []
+  let current = ''
+
+  for (const word of words) {
+    const candidate = current ? `${current} ${word}` : word
+    if (candidate.length <= maxChars) {
+      current = candidate
+      continue
+    }
+
+    if (current) {
+      wrapped.push(current)
+    }
+    current = word
+  }
+
+  if (current) {
+    wrapped.push(current)
+  }
+
+  return wrapped.length ? wrapped : [line]
+}
+
+const buildReportPdfBytes = (report: SupportReport) => {
+  const baseLines = [
+    'Colegio de Abogados del Estado Carabobo',
+    'Reporte de actividades finalizadas del equipo de soporte',
+    `Rango: ${formatDate(report.fromDate)} al ${formatDate(report.toDate)}`,
+    `De parte: ${report.deParte}`,
+    `Para: ${report.para}`,
+    `Generado: ${formatDateTime(report.generatedAt)}`,
+    '',
+    'Actividades:'
+  ]
+
+  if (!report.tasks.length) {
+    baseLines.push('- No se registraron actividades finalizadas en el rango indicado.')
+  } else {
+    for (const activity of report.tasks) {
+      baseLines.push(
+        `- ${activity.title} | Modulo: ${activity.module || '-'} | Fecha finalizada: ${formatDate(activity.completedAt)}`
+      )
+    }
+  }
+
+  baseLines.push('', 'Saludos,', report.deParte)
+
+  const wrappedLines = baseLines.flatMap((line) => wrapPdfLine(line))
+  const maxLines = 55
+  const finalLines =
+    wrappedLines.length > maxLines
+      ? [...wrappedLines.slice(0, maxLines - 1), '... Se omitieron actividades adicionales por espacio.']
+      : wrappedLines
+
+  const streamLines = ['BT', '/F1 10 Tf', '44 806 Td', '13 TL']
+  finalLines.forEach((line, index) => {
+    streamLines.push(`(${escapePdfText(line)}) Tj`)
+    if (index < finalLines.length - 1) {
+      streamLines.push('T*')
+    }
+  })
+  streamLines.push('ET')
+
+  const contentStream = streamLines.join('\n')
+
+  const objects = [
+    '',
+    '<< /Type /Catalog /Pages 2 0 R >>',
+    '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>',
+    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
+    `<< /Length ${contentStream.length} >>\nstream\n${contentStream}\nendstream`
+  ]
+
+  let pdf = '%PDF-1.4\n'
+  const offsets: number[] = [0]
+
+  for (let i = 1; i < objects.length; i += 1) {
+    offsets[i] = pdf.length
+    pdf += `${i} 0 obj\n${objects[i]}\nendobj\n`
+  }
+
+  const xrefOffset = pdf.length
+  pdf += `xref\n0 ${objects.length}\n`
+  pdf += '0000000000 65535 f \n'
+
+  for (let i = 1; i < objects.length; i += 1) {
+    pdf += `${String(offsets[i]).padStart(10, '0')} 00000 n \n`
+  }
+
+  pdf += `trailer\n<< /Size ${objects.length} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`
+
+  return new TextEncoder().encode(pdf)
+}
+
+const exportAndSharePdf = async () => {
+  if (!reportResult.value || typeof window === 'undefined') {
+    return
+  }
+
+  actionMessage.value = ''
+  actionError.value = ''
+
+  try {
+    const bytes = buildReportPdfBytes(reportResult.value)
+    const blob = new Blob([bytes], { type: 'application/pdf' })
+    const fileName = `reporte-actividades-${reportResult.value.fromDate}-${reportResult.value.toDate}.pdf`
+    const file = new File([blob], fileName, { type: 'application/pdf' })
+    const nav = window.navigator as Navigator & {
+      canShare?: (data?: ShareData) => boolean
+    }
+
+    if (typeof nav.share === 'function' && nav.canShare?.({ files: [file] })) {
+      await nav.share({
+        title: 'Reporte de actividades',
+        text: 'Compartiendo reporte de actividades finalizadas.',
+        files: [file]
+      })
+
+      actionMessage.value = 'PDF exportado y compartido correctamente.'
+      return
+    }
+
+    const url = window.URL.createObjectURL(blob)
+    const link = window.document.createElement('a')
+    link.href = url
+    link.download = fileName
+    window.document.body.appendChild(link)
+    link.click()
+    link.remove()
+    window.URL.revokeObjectURL(url)
+
+    actionMessage.value = 'PDF exportado. Puedes compartirlo desde tu dispositivo.'
+  } catch {
+    actionError.value = 'No se pudo exportar o compartir el PDF.'
+  }
+}
+
 const pendingTasks = computed(() => tasks.value.filter((task) => task.status === 'pendiente'))
 const completedTasks = computed(() =>
   tasks.value.filter((task) => task.status === 'finalizada')
 )
+const visibleTasks = computed(() =>
+  activeTaskTab.value === 'pendiente' ? pendingTasks.value : completedTasks.value
+)
+
+const activeFilterSummary = computed(() => {
+  const chunks: string[] = []
+
+  if (filters.status !== 'all') {
+    chunks.push(`Estatus: ${filters.status}`)
+  }
+
+  if (filters.fromDate || filters.toDate) {
+    chunks.push(`Fecha: ${filters.fromDate || '...'} - ${filters.toDate || '...'}`)
+  }
+
+  if (filters.keyword.trim()) {
+    chunks.push(`Keyword: ${filters.keyword.trim()}`)
+  }
+
+  return chunks.length ? chunks.join(' | ') : 'Sin filtros activos'
+})
 
 onMounted(async () => {
   await checkSupportSession()
@@ -526,7 +709,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <section class="space-y-6">
+  <section class="space-y-5">
     <div v-if="gate.checking" class="panel">
       <h1 class="text-3xl text-white">Modulo de Soporte</h1>
       <p class="mt-3 text-sm text-slate-200">Validando acceso al equipo de soporte...</p>
@@ -536,7 +719,7 @@ onMounted(async () => {
       <p class="text-xs uppercase tracking-[0.25em] text-sand-200">Acceso Protegido</p>
       <h1 class="mt-2 text-4xl text-white">Clave del Equipo de Soporte</h1>
       <p class="mt-3 text-sm text-slate-200">
-        Esta area requiere la clave SOPORTE_PSSWD configurada en el entorno.
+        Esta area requiere una clave de acceso para continuar.
       </p>
       <p class="mt-1 text-xs text-slate-300">
         Al validar la clave se guarda una cookie de acceso por 90 dias.
@@ -564,17 +747,47 @@ onMounted(async () => {
     </div>
 
     <template v-else>
-      <div class="panel flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <p class="text-xs uppercase tracking-[0.25em] text-sand-200">Soporte e Informatica</p>
-          <h1 class="mt-2 text-4xl text-white">Gestor Interno de Tareas</h1>
-          <p class="mt-2 text-sm text-slate-200">
-            Control de pendientes/finalizadas, filtros y reporte por rango de fechas.
-          </p>
+
+      <div class="panel space-y-4">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <p class="text-xs uppercase tracking-[0.25em] text-sand-200">Soporte e Informatica</p>
+            <h1 class="mt-2 text-3xl text-white sm:text-4xl">Gestor Interno de Tareas</h1>
+            <p class="mt-2 text-sm text-slate-200">
+              Vista compacta para movil con acciones por modal.
+            </p>
+          </div>
+          <button class="btn-primary w-full sm:w-auto" type="button" :disabled="loadingTasks" @click="loadTasks">
+            {{ loadingTasks ? 'Actualizando...' : 'Actualizar tareas' }}
+          </button>
         </div>
-        <button class="btn-primary" type="button" :disabled="loadingTasks" @click="loadTasks">
-          {{ loadingTasks ? 'Actualizando...' : 'Actualizar tareas' }}
-        </button>
+
+        <div class="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+          <button class="btn-secondary !w-full !px-3 !py-2 text-xs sm:!w-auto sm:text-sm" type="button" @click="ui.showCreateModal = true">
+            Nueva tarea
+          </button>
+          <button class="btn-secondary !w-full !px-3 !py-2 text-xs sm:!w-auto sm:text-sm" type="button" @click="ui.showFilterModal = true">
+            Filtros
+          </button>
+          <button class="btn-secondary !w-full !px-3 !py-2 text-xs sm:!w-auto sm:text-sm" type="button" @click="ui.showReportModal = true">
+            Generar reporte
+          </button>
+          <button class="btn-secondary !w-full !px-3 !py-2 text-xs sm:!w-auto sm:text-sm" type="button" @click="loadTasks">
+            Refrescar
+          </button>
+        </div>
+
+        <div class="flex flex-wrap gap-2 text-xs">
+          <span class="rounded-full border border-vino-200/40 bg-vino-700/35 px-3 py-1 text-vino-50">
+            Pendientes: {{ pendingTasks.length }}
+          </span>
+          <span class="rounded-full border border-verde-200/40 bg-verde-700/35 px-3 py-1 text-verde-50">
+            Finalizadas: {{ completedTasks.length }}
+          </span>
+          <span class="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-slate-100">
+            {{ activeFilterSummary }}
+          </span>
+        </div>
       </div>
 
       <p
@@ -591,10 +804,146 @@ onMounted(async () => {
         {{ actionError }}
       </p>
 
-      <div class="grid gap-6 xl:grid-cols-[1.05fr,0.95fr]">
-        <div class="panel space-y-4">
-          <h2 class="text-2xl text-white">Registrar nueva tarea</h2>
-          <form class="space-y-3" @submit.prevent="createTask">
+      <div class="panel">
+        <div class="flex items-center justify-between gap-3">
+          <h2 class="text-2xl text-white">Tareas</h2>
+          <div class="inline-flex rounded-xl border border-white/20 bg-black/20 p-1">
+            <button
+              type="button"
+              class="rounded-lg px-3 py-1.5 text-xs font-medium transition"
+              :class="activeTaskTab === 'pendiente' ? 'bg-vino-500 text-white' : 'text-slate-200 hover:bg-white/10'"
+              @click="activeTaskTab = 'pendiente'"
+            >
+              Pendientes
+            </button>
+            <button
+              type="button"
+              class="rounded-lg px-3 py-1.5 text-xs font-medium transition"
+              :class="activeTaskTab === 'finalizada' ? 'bg-verde-500 text-white' : 'text-slate-200 hover:bg-white/10'"
+              @click="activeTaskTab = 'finalizada'"
+            >
+              Finalizadas
+            </button>
+          </div>
+        </div>
+
+        <div class="mt-4 max-h-[68vh] space-y-3 overflow-y-auto pr-1">
+          <article v-for="task in visibleTasks" :key="`task-${task.id}`" class="rounded-2xl border border-white/15 bg-white/10 p-3 sm:p-4">
+            <details>
+              <summary class="flex cursor-pointer list-none items-start justify-between gap-2">
+                <div class="min-w-0">
+                  <p class="truncate text-sm font-semibold text-sand-100 sm:text-base">{{ task.title }}</p>
+                  <p class="mt-1 text-xs text-slate-300">
+                    {{ task.module || 'Sin modulo' }} · Fecha: {{ formatDate(task.taskDate) }}
+                  </p>
+                </div>
+                <span
+                  class="shrink-0 rounded-full px-2 py-1 text-[10px] font-semibold uppercase"
+                  :class="task.status === 'pendiente' ? 'bg-vino-500/30 text-vino-100' : 'bg-verde-500/30 text-verde-100'"
+                >
+                  {{ task.status }}
+                </span>
+              </summary>
+
+              <div class="mt-3 space-y-3">
+                <p v-if="task.description" class="text-sm text-slate-200">{{ task.description }}</p>
+
+                <div class="flex flex-wrap gap-2 text-xs text-slate-200">
+                  <span class="rounded-md bg-black/25 px-2 py-1">Keywords: {{ task.keywords || '-' }}</span>
+                  <span class="rounded-md bg-black/25 px-2 py-1">Creada: {{ formatDateTime(task.createdAt) }}</span>
+                  <span class="rounded-md bg-black/25 px-2 py-1">Actualizada: {{ formatDateTime(task.updatedAt) }}</span>
+                  <span class="rounded-md bg-black/25 px-2 py-1">Finalizada: {{ formatDateTime(task.completedAt) }}</span>
+                </div>
+
+                <div class="grid gap-2 sm:grid-cols-2">
+                  <button
+                    type="button"
+                    :class="task.status === 'pendiente' ? 'btn-primary w-full !py-2 text-xs sm:text-sm' : 'btn-secondary w-full !py-2 text-xs sm:text-sm'"
+                    @click="toggleStatus(task)"
+                  >
+                    {{ task.status === 'pendiente' ? 'Marcar finalizada' : 'Reabrir tarea' }}
+                  </button>
+                  <button class="btn-secondary w-full !py-2 text-xs sm:text-sm" type="button" @click="startEdit(task)">
+                    Editar tarea
+                  </button>
+                </div>
+              </div>
+            </details>
+          </article>
+
+          <p v-if="!visibleTasks.length" class="text-sm text-slate-300">
+            No hay tareas en esta vista con los filtros actuales.
+          </p>
+        </div>
+      </div>
+
+      <details v-if="reportResult" class="panel">
+        <summary class="cursor-pointer list-none text-lg font-semibold text-sand-100">
+          Vista previa del reporte de actividades
+        </summary>
+
+        <div class="mt-4 space-y-4">
+          <div class="space-y-1 text-sm text-slate-200">
+            <p><strong>Rango:</strong> {{ formatDate(reportResult.fromDate) }} al {{ formatDate(reportResult.toDate) }}</p>
+            <p><strong>De parte:</strong> {{ reportResult.deParte }}</p>
+            <p><strong>Para:</strong> {{ reportResult.para }}</p>
+            <p><strong>Generado:</strong> {{ formatDateTime(reportResult.generatedAt) }}</p>
+          </div>
+
+          <div class="flex flex-wrap gap-2">
+            <button class="btn-secondary !px-3 !py-2 text-xs sm:text-sm" type="button" @click="printReport">
+              Imprimir
+            </button>
+            <button class="btn-secondary !px-3 !py-2 text-xs sm:text-sm" type="button" @click="exportAndSharePdf">
+              Exportar/Compartir PDF
+            </button>
+            <button class="btn-primary !px-3 !py-2 text-xs sm:text-sm" type="button" @click="downloadReportDoc">
+              Descargar .doc
+            </button>
+          </div>
+
+          <div class="max-h-72 overflow-y-auto rounded-xl border border-white/15 bg-black/20">
+            <table class="min-w-full text-left text-sm text-slate-100">
+              <thead class="bg-black/35 text-xs uppercase tracking-wide text-slate-300">
+                <tr>
+                  <th class="px-3 py-2">Actividad</th>
+                  <th class="px-3 py-2">Modulo</th>
+                  <th class="px-3 py-2">Fecha finalizada</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="task in reportResult.tasks"
+                  :key="`report-${task.id}`"
+                  class="border-t border-white/10"
+                >
+                  <td class="px-3 py-2">{{ task.title }}</td>
+                  <td class="px-3 py-2">{{ task.module || '-' }}</td>
+                  <td class="px-3 py-2">{{ formatDate(task.completedAt) }}</td>
+                </tr>
+                <tr v-if="!reportResult.tasks.length">
+                  <td class="px-3 py-3 text-slate-300" colspan="3">
+                    No se registraron actividades finalizadas en este rango.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </details>
+
+      <div
+        v-if="ui.showCreateModal"
+        class="fixed inset-0 z-40 flex items-end justify-center bg-black/70 p-0 sm:items-center sm:p-4"
+        @click.self="ui.showCreateModal = false"
+      >
+        <div class="w-full max-h-[92vh] overflow-y-auto rounded-t-3xl border border-white/20 bg-ink p-5 sm:max-w-2xl sm:rounded-3xl">
+          <div class="flex items-center justify-between gap-3">
+            <h2 class="text-xl text-white">Nueva tarea</h2>
+            <button class="btn-secondary !px-3 !py-1.5 text-xs" type="button" @click="ui.showCreateModal = false">Cerrar</button>
+          </div>
+
+          <form class="mt-4 space-y-3" @submit.prevent="createTask">
             <input
               v-model="createForm.title"
               type="text"
@@ -605,32 +954,44 @@ onMounted(async () => {
             />
 
             <div class="grid gap-3 sm:grid-cols-2">
-              <input v-model="createForm.module" type="text" class="field" placeholder="Modulo" />
+              <input v-model="createForm.module" type="text" class="field" placeholder="Modulo (opcional)" />
               <input v-model="createForm.taskDate" type="date" class="field" />
             </div>
-
-            <input
-              v-model="createForm.keywords"
-              type="text"
-              class="field"
-              placeholder="Keywords (separadas por coma)"
-            />
 
             <textarea
               v-model="createForm.description"
               class="field min-h-28"
-              placeholder="Descripcion de la tarea"
+              placeholder="Descripcion de la actividad (opcional)"
             />
 
+            <label class="flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-sm text-slate-100">
+              <input
+                v-model="createForm.markAsCompleted"
+                type="checkbox"
+                class="h-4 w-4 rounded border-white/30 bg-white/10"
+              />
+              Registrar actividad como finalizada
+            </label>
+
             <button class="btn-primary w-full" :disabled="createPending" type="submit">
-              {{ createPending ? 'Creando...' : 'Crear tarea' }}
+              {{ createPending ? 'Creando...' : 'Guardar actividad' }}
             </button>
           </form>
         </div>
+      </div>
 
-        <div class="panel space-y-4">
-          <h2 class="text-2xl text-white">Filtros de consulta</h2>
-          <form class="space-y-3" @submit.prevent="applyFilters">
+      <div
+        v-if="ui.showFilterModal"
+        class="fixed inset-0 z-40 flex items-end justify-center bg-black/70 p-0 sm:items-center sm:p-4"
+        @click.self="ui.showFilterModal = false"
+      >
+        <div class="w-full max-h-[92vh] overflow-y-auto rounded-t-3xl border border-white/20 bg-ink p-5 sm:max-w-xl sm:rounded-3xl">
+          <div class="flex items-center justify-between gap-3">
+            <h2 class="text-xl text-white">Filtros</h2>
+            <button class="btn-secondary !px-3 !py-1.5 text-xs" type="button" @click="ui.showFilterModal = false">Cerrar</button>
+          </div>
+
+          <form class="mt-4 space-y-3" @submit.prevent="applyFilters">
             <select v-model="filters.status" class="field">
               <option value="all">Todos los estatus</option>
               <option value="pendiente">Pendiente</option>
@@ -659,204 +1020,74 @@ onMounted(async () => {
         </div>
       </div>
 
-      <div v-if="editForm.id" class="panel space-y-4">
-        <h2 class="text-2xl text-white">Editar tarea #{{ editForm.id }}</h2>
-
-        <form class="space-y-3" @submit.prevent="updateTask">
-          <input
-            v-model="editForm.title"
-            type="text"
-            class="field"
-            placeholder="Titulo"
-            minlength="3"
-            required
-          />
-
-          <div class="grid gap-3 md:grid-cols-3">
-            <input v-model="editForm.module" class="field" placeholder="Modulo" />
-            <input v-model="editForm.taskDate" type="date" class="field" />
-            <select v-model="editForm.status" class="field">
-              <option value="pendiente">Pendiente</option>
-              <option value="finalizada">Finalizada</option>
-            </select>
+      <div
+        v-if="ui.showReportModal"
+        class="fixed inset-0 z-40 flex items-end justify-center bg-black/70 p-0 sm:items-center sm:p-4"
+        @click.self="ui.showReportModal = false"
+      >
+        <div class="w-full max-h-[92vh] overflow-y-auto rounded-t-3xl border border-white/20 bg-ink p-5 sm:max-w-2xl sm:rounded-3xl">
+          <div class="flex items-center justify-between gap-3">
+            <h2 class="text-xl text-white">Generar reporte</h2>
+            <button class="btn-secondary !px-3 !py-1.5 text-xs" type="button" @click="ui.showReportModal = false">Cerrar</button>
           </div>
 
-          <input v-model="editForm.keywords" class="field" placeholder="Keywords" />
-
-          <textarea
-            v-model="editForm.description"
-            class="field min-h-28"
-            placeholder="Descripcion"
-          />
-
-          <div class="grid gap-2 sm:grid-cols-2">
-            <button class="btn-primary w-full" :disabled="updatePending" type="submit">
-              {{ updatePending ? 'Guardando...' : 'Guardar cambios' }}
+          <form class="mt-4 grid gap-3 md:grid-cols-2" @submit.prevent="generateReport">
+            <input v-model="reportForm.fromDate" type="date" class="field" required />
+            <input v-model="reportForm.toDate" type="date" class="field" required />
+            <input v-model="reportForm.deParte" class="field" placeholder="De parte" required />
+            <input v-model="reportForm.para" class="field" placeholder="Para" required />
+            <button class="btn-primary md:col-span-2" :disabled="reportPending" type="submit">
+              {{ reportPending ? 'Generando...' : 'Generar reporte' }}
             </button>
-            <button class="btn-secondary w-full" type="button" @click="cancelEdit">Cancelar</button>
-          </div>
-        </form>
-      </div>
-
-      <div class="grid gap-6 lg:grid-cols-2">
-        <div class="panel">
-          <div class="flex items-center justify-between gap-2">
-            <h2 class="text-2xl text-white">Pendientes</h2>
-            <span class="rounded-lg bg-vino-600/40 px-2 py-1 text-xs text-vino-100">
-              {{ pendingTasks.length }}
-            </span>
-          </div>
-
-          <div class="mt-4 max-h-[30rem] space-y-3 overflow-y-auto pr-1">
-            <article
-              v-for="task in pendingTasks"
-              :key="`pend-${task.id}`"
-              class="rounded-2xl border border-white/15 bg-white/10 p-4"
-            >
-              <div class="flex flex-wrap items-start justify-between gap-2">
-                <h3 class="text-base font-semibold text-sand-100">{{ task.title }}</h3>
-                <button class="btn-primary !px-3 !py-1.5 text-xs" @click="toggleStatus(task)">
-                  Finalizar
-                </button>
-              </div>
-
-              <p v-if="task.description" class="mt-2 text-sm text-slate-200">{{ task.description }}</p>
-
-              <div class="mt-3 flex flex-wrap gap-2 text-xs text-slate-300">
-                <span class="rounded-md bg-black/25 px-2 py-1">Modulo: {{ task.module || '-' }}</span>
-                <span class="rounded-md bg-black/25 px-2 py-1">Fecha tarea: {{ formatDate(task.taskDate) }}</span>
-                <span class="rounded-md bg-black/25 px-2 py-1">Keywords: {{ task.keywords || '-' }}</span>
-                <span class="rounded-md bg-black/25 px-2 py-1">Creada: {{ formatDateTime(task.createdAt) }}</span>
-              </div>
-
-              <button class="btn-secondary mt-3 !px-3 !py-1.5 text-xs" @click="startEdit(task)">
-                Editar
-              </button>
-            </article>
-
-            <p v-if="!pendingTasks.length" class="text-sm text-slate-300">
-              No hay tareas pendientes con los filtros actuales.
-            </p>
-          </div>
-        </div>
-
-        <div class="panel">
-          <div class="flex items-center justify-between gap-2">
-            <h2 class="text-2xl text-white">Finalizadas</h2>
-            <span class="rounded-lg bg-verde-700/40 px-2 py-1 text-xs text-verde-100">
-              {{ completedTasks.length }}
-            </span>
-          </div>
-
-          <div class="mt-4 max-h-[30rem] space-y-3 overflow-y-auto pr-1">
-            <article
-              v-for="task in completedTasks"
-              :key="`fin-${task.id}`"
-              class="rounded-2xl border border-white/15 bg-emerald-900/20 p-4"
-            >
-              <div class="flex flex-wrap items-start justify-between gap-2">
-                <h3 class="text-base font-semibold text-emerald-100">{{ task.title }}</h3>
-                <button class="btn-secondary !px-3 !py-1.5 text-xs" @click="toggleStatus(task)">
-                  Reabrir
-                </button>
-              </div>
-
-              <p v-if="task.description" class="mt-2 text-sm text-slate-200">{{ task.description }}</p>
-
-              <div class="mt-3 flex flex-wrap gap-2 text-xs text-slate-300">
-                <span class="rounded-md bg-black/25 px-2 py-1">Modulo: {{ task.module || '-' }}</span>
-                <span class="rounded-md bg-black/25 px-2 py-1">Fecha tarea: {{ formatDate(task.taskDate) }}</span>
-                <span class="rounded-md bg-black/25 px-2 py-1">Keywords: {{ task.keywords || '-' }}</span>
-                <span class="rounded-md bg-black/25 px-2 py-1">Finalizada: {{ formatDateTime(task.completedAt) }}</span>
-              </div>
-
-              <button class="btn-secondary mt-3 !px-3 !py-1.5 text-xs" @click="startEdit(task)">
-                Editar
-              </button>
-            </article>
-
-            <p v-if="!completedTasks.length" class="text-sm text-slate-300">
-              No hay tareas finalizadas con los filtros actuales.
-            </p>
-          </div>
+          </form>
         </div>
       </div>
 
-      <div class="panel space-y-4">
-        <h2 class="text-2xl text-white">Reporte de tareas finalizadas</h2>
+      <div
+        v-if="ui.showEditModal && editForm.id"
+        class="fixed inset-0 z-40 flex items-end justify-center bg-black/70 p-0 sm:items-center sm:p-4"
+        @click.self="cancelEdit"
+      >
+        <div class="w-full max-h-[92vh] overflow-y-auto rounded-t-3xl border border-white/20 bg-ink p-5 sm:max-w-2xl sm:rounded-3xl">
+          <div class="flex items-center justify-between gap-3">
+            <h2 class="text-xl text-white">Editar tarea #{{ editForm.id }}</h2>
+            <button class="btn-secondary !px-3 !py-1.5 text-xs" type="button" @click="cancelEdit">Cerrar</button>
+          </div>
 
-        <form class="grid gap-3 md:grid-cols-2" @submit.prevent="generateReport">
-          <input v-model="reportForm.fromDate" type="date" class="field" required />
-          <input v-model="reportForm.toDate" type="date" class="field" required />
-          <input
-            v-model="reportForm.deParte"
-            class="field"
-            placeholder="De parte"
-            required
-          />
-          <input v-model="reportForm.para" class="field" placeholder="Para" required />
-          <input
-            v-model="reportForm.keyword"
-            class="field md:col-span-2"
-            placeholder="Filtro de keywords para reporte (opcional)"
-          />
-          <button class="btn-primary md:col-span-2" :disabled="reportPending" type="submit">
-            {{ reportPending ? 'Generando reporte...' : 'Generar reporte' }}
-          </button>
-        </form>
+          <form class="mt-4 space-y-3" @submit.prevent="updateTask">
+            <input
+              v-model="editForm.title"
+              type="text"
+              class="field"
+              placeholder="Titulo"
+              minlength="3"
+              required
+            />
 
-        <div v-if="reportResult" class="rounded-2xl border border-white/15 bg-white/10 p-4">
-          <div class="flex flex-wrap items-center justify-between gap-2">
-            <h3 class="text-xl text-sand-100">Vista previa del reporte</h3>
-            <div class="flex flex-wrap gap-2">
-              <button class="btn-secondary !px-3 !py-1.5 text-xs" type="button" @click="printReport">
-                Imprimir
-              </button>
-              <button class="btn-primary !px-3 !py-1.5 text-xs" type="button" @click="downloadReportDoc">
-                Descargar .doc
-              </button>
+            <div class="grid gap-3 md:grid-cols-3">
+              <input v-model="editForm.module" class="field" placeholder="Modulo" />
+              <input v-model="editForm.taskDate" type="date" class="field" />
+              <select v-model="editForm.status" class="field">
+                <option value="pendiente">Pendiente</option>
+                <option value="finalizada">Finalizada</option>
+              </select>
             </div>
-          </div>
 
-          <div class="mt-3 space-y-1 text-sm text-slate-200">
-            <p><strong>Rango:</strong> {{ formatDate(reportResult.fromDate) }} al {{ formatDate(reportResult.toDate) }}</p>
-            <p><strong>De parte:</strong> {{ reportResult.deParte }}</p>
-            <p><strong>Para:</strong> {{ reportResult.para }}</p>
-            <p><strong>Generado:</strong> {{ formatDateTime(reportResult.generatedAt) }}</p>
-            <p><strong>Total finalizadas:</strong> {{ reportResult.totalTasks }}</p>
-          </div>
+            <input v-model="editForm.keywords" class="field" placeholder="Keywords" />
 
-          <div class="mt-4 max-h-72 overflow-y-auto rounded-xl border border-white/15 bg-black/20">
-            <table class="min-w-full text-left text-sm text-slate-100">
-              <thead class="bg-black/35 text-xs uppercase tracking-wide text-slate-300">
-                <tr>
-                  <th class="px-3 py-2">#</th>
-                  <th class="px-3 py-2">Tarea</th>
-                  <th class="px-3 py-2">Modulo</th>
-                  <th class="px-3 py-2">Keywords</th>
-                  <th class="px-3 py-2">Fecha finalizada</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr
-                  v-for="(task, idx) in reportResult.tasks"
-                  :key="`report-${task.id}`"
-                  class="border-t border-white/10"
-                >
-                  <td class="px-3 py-2">{{ idx + 1 }}</td>
-                  <td class="px-3 py-2">{{ task.title }}</td>
-                  <td class="px-3 py-2">{{ task.module || '-' }}</td>
-                  <td class="px-3 py-2">{{ task.keywords || '-' }}</td>
-                  <td class="px-3 py-2">{{ formatDate(task.completedAt) }}</td>
-                </tr>
-                <tr v-if="!reportResult.tasks.length">
-                  <td class="px-3 py-3 text-slate-300" colspan="5">
-                    No se registraron tareas finalizadas en este rango.
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+            <textarea
+              v-model="editForm.description"
+              class="field min-h-28"
+              placeholder="Descripcion"
+            />
+
+            <div class="grid gap-2 sm:grid-cols-2">
+              <button class="btn-primary w-full" :disabled="updatePending" type="submit">
+                {{ updatePending ? 'Guardando...' : 'Guardar cambios' }}
+              </button>
+              <button class="btn-secondary w-full" type="button" @click="cancelEdit">Cancelar</button>
+            </div>
+          </form>
         </div>
       </div>
     </template>

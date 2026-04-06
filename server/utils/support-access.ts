@@ -33,7 +33,7 @@ const getSupportPassword = () => {
   if (!password) {
     throw createError({
       statusCode: 500,
-      statusMessage: 'SOPORTE_PSSWD no esta configurado en el entorno.'
+      statusMessage: 'El modulo de soporte no esta disponible temporalmente.'
     })
   }
 

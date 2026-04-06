@@ -146,8 +146,12 @@ export const createSupportTask = async (payload: {
   keywords?: string
   module?: string
   taskDate?: string
+  status?: SupportTaskStatus
 }) => {
   await ensureSupportTasksTable()
+
+  const status: SupportTaskStatus =
+    payload.status === 'finalizada' ? 'finalizada' : 'pendiente'
 
   const request = await dbRequest()
   request.input('title', sql.NVarChar(220), payload.title.trim())
@@ -155,9 +159,10 @@ export const createSupportTask = async (payload: {
   request.input('keywords', sql.NVarChar(400), payload.keywords?.trim() || null)
   request.input('module', sql.NVarChar(120), payload.module?.trim() || null)
   request.input('taskDate', sql.Date, payload.taskDate || null)
+  request.input('status', sql.NVarChar(20), status)
 
   const result = await request.query<SupportTaskRow>(`
-    INSERT INTO dbo.SupportTasks (title, description, keywords, module, taskDate, status)
+    INSERT INTO dbo.SupportTasks (title, description, keywords, module, taskDate, status, completedAt)
     OUTPUT
       inserted.id,
       inserted.title,
@@ -169,7 +174,15 @@ export const createSupportTask = async (payload: {
       inserted.createdAt,
       inserted.updatedAt,
       inserted.completedAt
-    VALUES (@title, @description, @keywords, @module, @taskDate, 'pendiente')
+    VALUES (
+      @title,
+      @description,
+      @keywords,
+      @module,
+      @taskDate,
+      @status,
+      CASE WHEN @status = 'finalizada' THEN SYSDATETIME() ELSE NULL END
+    )
   `)
 
   return mapRow(result.recordset[0])
@@ -260,17 +273,12 @@ export const updateSupportTask = async (
   return mapRow(result.recordset[0])
 }
 
-export const listCompletedTasksForReport = async (
-  fromDate: string,
-  toDate: string,
-  keyword?: string
-) => {
+export const listCompletedTasksForReport = async (fromDate: string, toDate: string) => {
   await ensureSupportTasksTable()
 
   const request = await dbRequest()
   request.input('fromDate', sql.Date, fromDate)
   request.input('toDate', sql.Date, toDate)
-  request.input('keyword', sql.NVarChar(220), keyword ? `%${keyword}%` : null)
 
   const result = await request.query<SupportTaskRow>(`
     SELECT
@@ -290,13 +298,6 @@ export const listCompletedTasksForReport = async (
       AND completedAt IS NOT NULL
       AND CAST(completedAt AS DATE) >= @fromDate
       AND CAST(completedAt AS DATE) <= @toDate
-      AND (
-        @keyword IS NULL OR
-        title LIKE @keyword OR
-        ISNULL(description, '') LIKE @keyword OR
-        ISNULL(keywords, '') LIKE @keyword OR
-        ISNULL(module, '') LIKE @keyword
-      )
     ORDER BY completedAt ASC, id ASC
   `)
 

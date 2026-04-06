@@ -28,6 +28,13 @@ const solvencia = reactive({
   error: ''
 })
 
+const ui = reactive({
+  showAdvancedModal: false,
+  showProfileModal: false,
+  showCandidatesModal: false,
+  showOperations: true
+})
+
 const errorStatusCode = (error: unknown) => {
   const parsed = error as {
     statusCode?: number
@@ -57,6 +64,9 @@ const unlockSolvencia = async () => {
   solvencia.error = ''
   result.value = null
   message.value = ''
+  ui.showAdvancedModal = false
+  ui.showProfileModal = false
+  ui.showCandidatesModal = false
 
   try {
     await $fetch('/api/solvencia/access', {
@@ -102,14 +112,19 @@ const fetchDetails = async (cod = '') => {
     })
 
     result.value = response as typeof result.value
+    ui.showOperations = true
 
     if (!response.found) {
+      ui.showProfileModal = false
+      ui.showCandidatesModal = false
       message.value = 'No se encontraron coincidencias para la busqueda.'
     }
   } catch (error: unknown) {
     if (errorStatusCode(error) === 401) {
       result.value = null
       message.value = ''
+      ui.showProfileModal = false
+      ui.showCandidatesModal = false
       solvencia.granted = false
       solvencia.error =
         'Tu sesion de consulta vencio. Vuelve a ingresar la clave.'
@@ -125,13 +140,51 @@ const fetchDetails = async (cod = '') => {
   }
 }
 
+const hasResult = computed(() => Boolean(result.value?.found))
+const groupedOperations = computed(() => result.value?.groupedByYear || [])
+
+const applyAdvancedFilters = async () => {
+  ui.showAdvancedModal = false
+  await fetchDetails()
+}
+
+const clearAdvancedFilters = async () => {
+  form.year = ''
+  ui.showAdvancedModal = false
+
+  if (hasResult.value) {
+    await fetchDetails()
+  }
+}
+
+const openProfileModal = () => {
+  if (!hasResult.value) {
+    return
+  }
+
+  ui.showProfileModal = true
+}
+
+const openCandidatesModal = () => {
+  if (!hasResult.value) {
+    return
+  }
+
+  ui.showCandidatesModal = true
+}
+
+const selectCandidate = async (cod = '') => {
+  ui.showCandidatesModal = false
+  await fetchDetails(cod)
+}
+
 onMounted(async () => {
   await checkSolvenciaSession()
 })
 </script>
 
 <template>
-  <section class="space-y-6">
+  <section class="space-y-5">
     <div v-if="solvencia.checking" class="panel">
       <h1 class="text-3xl text-white">Consulta de Operaciones</h1>
       <p class="mt-3 text-sm text-slate-200">Validando sesion de consulta...</p>
@@ -141,7 +194,7 @@ onMounted(async () => {
       <p class="text-xs uppercase tracking-[0.25em] text-sand-200">Acceso Protegido</p>
       <h1 class="mt-2 text-4xl text-white">Clave de Consulta</h1>
       <p class="mt-3 text-sm text-slate-200">
-        Esta area requiere la clave SOLVENCIA_PSSWD configurada en el entorno.
+        Esta area requiere una clave de acceso para continuar.
       </p>
       <p class="mt-1 text-xs text-slate-300">
         Al validar la clave se guarda una cookie de sesion por 90 dias.
@@ -169,14 +222,14 @@ onMounted(async () => {
     </div>
 
     <template v-else>
-      <div class="panel">
+      <div class="panel space-y-4">
         <p class="text-xs uppercase tracking-[0.25em] text-sand-200">Consulta Publica</p>
-        <h1 class="mt-2 text-4xl text-white">Verificar Operaciones</h1>
+        <h1 class="mt-2 text-3xl text-white sm:text-4xl">Verificar Operaciones</h1>
         <p class="mt-3 text-sm text-slate-200">
-          Busca por cedula, Inpre o identificador y opcionalmente filtra por año.
+          Busqueda compacta para movil. Usa acciones para abrir filtros y detalles.
         </p>
 
-        <form class="mt-6 grid gap-4 md:grid-cols-[2fr,1fr,auto]" @submit.prevent="fetchDetails()">
+        <form class="grid gap-3 sm:grid-cols-[1fr,auto]" @submit.prevent="fetchDetails()">
           <input
             v-model="form.q"
             type="text"
@@ -184,95 +237,180 @@ onMounted(async () => {
             placeholder="Cedula o Inpre"
             required
           />
-          <input
-            v-model="form.year"
-            type="number"
-            min="1990"
-            :max="new Date().getFullYear() + 1"
-            class="field"
-            placeholder="Año (opcional)"
-          />
-          <button class="btn-primary" :disabled="pending" type="submit">
+          <button class="btn-primary w-full sm:w-auto" :disabled="pending" type="submit">
             {{ pending ? 'Buscando...' : 'Buscar' }}
           </button>
         </form>
+
+        <div class="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+          <button class="btn-secondary !w-full !px-3 !py-2 text-xs sm:!w-auto sm:text-sm" type="button" @click="ui.showAdvancedModal = true">
+            Filtros
+          </button>
+          <button class="btn-secondary !w-full !px-3 !py-2 text-xs sm:!w-auto sm:text-sm" type="button" :disabled="!hasResult" @click="openProfileModal">
+            Perfil
+          </button>
+          <button class="btn-secondary !w-full !px-3 !py-2 text-xs sm:!w-auto sm:text-sm" type="button" :disabled="!hasResult" @click="openCandidatesModal">
+            Coincidencias
+          </button>
+          <button
+            class="btn-secondary !w-full !px-3 !py-2 text-xs sm:!w-auto sm:text-sm"
+            type="button"
+            :disabled="!hasResult"
+            @click="ui.showOperations = !ui.showOperations"
+          >
+            {{ ui.showOperations ? 'Ocultar operaciones' : 'Mostrar operaciones' }}
+          </button>
+        </div>
+
+        <p class="text-xs text-slate-300">
+          Filtro activo: {{ form.year ? `Año ${form.year}` : 'Sin filtro por año' }}
+        </p>
 
         <p v-if="message" class="mt-4 rounded-xl border border-rose-300/30 bg-rose-300/10 px-3 py-2 text-sm text-rose-100">
           {{ message }}
         </p>
       </div>
 
-      <div v-if="result?.found" class="grid gap-6 lg:grid-cols-[1fr,1fr]">
-        <div class="panel">
-          <h2 class="text-2xl text-white">Perfil</h2>
-          <div class="mt-4 space-y-1 text-sm text-slate-100">
-            <p><strong>Nombre:</strong> {{ result.profile?.lawyer?.Descrip || 'Sin nombre' }}</p>
-            <p><strong>Cedula:</strong> {{ result.profile?.lawyer?.CodClie || '-' }}</p>
-            <p><strong>Inpre:</strong> {{ result.profile?.lawyer?.Clase || '-' }}</p>
-            <p><strong>Solvente hasta:</strong> {{ result.profile?.solvency?.hasta || 'No registrado' }}</p>
-            <p><strong>Carnet:</strong> {{ result.profile?.solvency?.CarnetNum2 || 'No posee' }}</p>
-            <p><strong>Inscripcion:</strong> {{ result.profile?.inscription?.Fecha || 'No registrada' }}</p>
+      <div v-if="hasResult" class="panel">
+        <div class="flex items-center justify-between gap-3">
+          <h2 class="text-2xl text-white">Operaciones</h2>
+          <p class="text-xs text-slate-300">{{ groupedOperations.length }} grupos por año</p>
+        </div>
+
+        <div v-if="ui.showOperations" class="mt-4 space-y-3">
+          <article
+            v-for="group in groupedOperations"
+            :key="group.year"
+            class="rounded-2xl border border-white/10 bg-white/10 p-3 sm:p-4"
+          >
+            <details>
+              <summary class="cursor-pointer list-none text-sm font-semibold text-sand-100 sm:text-base">
+                Año {{ group.year }} ({{ group.items.length }})
+              </summary>
+
+              <ul class="mt-3 space-y-2 text-sm">
+                <li
+                  v-for="(row, idx) in group.items"
+                  :key="`${row.NumeroD || 'num'}-${idx}`"
+                  class="rounded-xl border border-white/10 bg-black/20 p-3"
+                >
+                  <p class="font-semibold text-slate-100">{{ row.FechaE || 'Sin fecha' }} · {{ row.NumeroD || 'Sin numero' }}</p>
+                  <p class="text-slate-300">{{ row.OrdenC || '' }}</p>
+                  <details class="mt-2">
+                    <summary class="cursor-pointer list-none text-xs text-sand-100">Ver notas</summary>
+                    <p class="mt-1 text-slate-200">{{ row.notes || 'Sin observaciones.' }}</p>
+                  </details>
+                </li>
+              </ul>
+            </details>
+          </article>
+        </div>
+
+        <p v-else class="mt-3 text-sm text-slate-300">
+          Las operaciones estan ocultas para reducir elementos en pantalla.
+        </p>
+      </div>
+
+      <div
+        v-if="ui.showAdvancedModal"
+        class="fixed inset-0 z-40 flex items-end justify-center bg-black/70 p-0 sm:items-center sm:p-4"
+        @click.self="ui.showAdvancedModal = false"
+      >
+        <div class="w-full max-h-[92vh] overflow-y-auto rounded-t-3xl border border-white/20 bg-ink p-5 sm:max-w-lg sm:rounded-3xl">
+          <div class="flex items-center justify-between gap-3">
+            <h3 class="text-lg text-white">Filtro avanzado</h3>
+            <button class="btn-secondary !px-3 !py-1.5 text-xs" type="button" @click="ui.showAdvancedModal = false">
+              Cerrar
+            </button>
           </div>
 
-          <div class="mt-5 flex flex-wrap gap-3">
+          <form class="mt-4 space-y-3" @submit.prevent="applyAdvancedFilters">
+            <input
+              v-model="form.year"
+              type="number"
+              min="1990"
+              :max="new Date().getFullYear() + 1"
+              class="field"
+              placeholder="Año (opcional)"
+            />
+
+            <div class="grid gap-2 sm:grid-cols-2">
+              <button class="btn-primary w-full" type="submit">Aplicar filtro</button>
+              <button class="btn-secondary w-full" type="button" @click="clearAdvancedFilters">
+                Limpiar año
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div
+        v-if="ui.showProfileModal && hasResult"
+        class="fixed inset-0 z-40 flex items-end justify-center bg-black/70 p-0 sm:items-center sm:p-4"
+        @click.self="ui.showProfileModal = false"
+      >
+        <div class="w-full max-h-[92vh] overflow-y-auto rounded-t-3xl border border-white/20 bg-ink p-5 sm:max-w-xl sm:rounded-3xl">
+          <div class="flex items-center justify-between gap-3">
+            <h3 class="text-lg text-white">Perfil del abogado</h3>
+            <button class="btn-secondary !px-3 !py-1.5 text-xs" type="button" @click="ui.showProfileModal = false">
+              Cerrar
+            </button>
+          </div>
+
+          <div class="mt-4 space-y-1 text-sm text-slate-100">
+            <p><strong>Nombre:</strong> {{ result?.profile?.lawyer?.Descrip || 'Sin nombre' }}</p>
+            <p><strong>Cedula:</strong> {{ result?.profile?.lawyer?.CodClie || '-' }}</p>
+            <p><strong>Inpre:</strong> {{ result?.profile?.lawyer?.Clase || '-' }}</p>
+            <p><strong>Solvente hasta:</strong> {{ result?.profile?.solvency?.hasta || 'No registrado' }}</p>
+            <p><strong>Carnet:</strong> {{ result?.profile?.solvency?.CarnetNum2 || 'No posee' }}</p>
+            <p><strong>Inscripcion:</strong> {{ result?.profile?.inscription?.Fecha || 'No registrada' }}</p>
+          </div>
+
+          <div class="mt-4 grid gap-2 sm:grid-cols-2">
             <NuxtLink
-              v-if="result.selected?.CodClie"
-              class="btn-primary"
+              v-if="result?.selected?.CodClie"
+              class="btn-primary w-full"
               :to="{ path: `/operations/${result.selected.CodClie}`, query: { source: 'safact' } }"
             >
               Ver todo SAFACT
             </NuxtLink>
             <NuxtLink
-              v-if="result.selected?.CodClie"
-              class="btn-secondary"
+              v-if="result?.selected?.CodClie"
+              class="btn-secondary w-full"
               :to="{ path: `/operations/${result.selected.CodClie}`, query: { source: 'saacxc' } }"
             >
               Ver todo SAACXC
             </NuxtLink>
           </div>
         </div>
-
-        <div class="panel">
-          <h2 class="text-2xl text-white">Coincidencias</h2>
-          <div v-if="result.candidates.length" class="mt-4 max-h-80 overflow-y-auto pr-1">
-            <ul class="space-y-2">
-              <li
-                v-for="item in result.candidates"
-                :key="`${item.CodClie}-${item.Clase}`"
-                class="flex items-center justify-between gap-3 rounded-xl border border-white/15 bg-white/10 px-3 py-2 text-sm"
-              >
-                <span class="min-w-0 truncate">{{ item.CodClie }} | {{ item.Clase }} | {{ item.Descrip }}</span>
-                <button class="btn-secondary !px-3 !py-1.5" @click="fetchDetails(item.CodClie || '')">
-                  Ver
-                </button>
-              </li>
-            </ul>
-          </div>
-          <p v-else class="mt-4 text-sm text-slate-200">Sin coincidencias adicionales.</p>
-        </div>
       </div>
 
-      <div v-if="result?.found" class="panel">
-        <h2 class="text-3xl text-white">Operaciones</h2>
-        <div class="mt-5 space-y-5">
-          <article
-            v-for="group in result.groupedByYear || []"
-            :key="group.year"
-            class="rounded-2xl border border-white/10 bg-white/10 p-4"
-          >
-            <h3 class="text-xl text-sand-100">Año {{ group.year }} ({{ group.items.length }})</h3>
-            <ul class="mt-3 space-y-2 text-sm">
-              <li
-                v-for="(row, idx) in group.items"
-                :key="`${row.NumeroD || 'num'}-${idx}`"
-                class="rounded-xl border border-white/10 bg-black/20 p-3"
-              >
-                <p class="font-semibold text-slate-100">{{ row.FechaE || 'Sin fecha' }} · {{ row.NumeroD || 'Sin numero' }}</p>
-                <p class="text-slate-300">{{ row.OrdenC || '' }}</p>
-                <p class="mt-1 text-slate-200">{{ row.notes || 'Sin observaciones.' }}</p>
-              </li>
-            </ul>
-          </article>
+      <div
+        v-if="ui.showCandidatesModal && hasResult"
+        class="fixed inset-0 z-40 flex items-end justify-center bg-black/70 p-0 sm:items-center sm:p-4"
+        @click.self="ui.showCandidatesModal = false"
+      >
+        <div class="w-full max-h-[92vh] overflow-y-auto rounded-t-3xl border border-white/20 bg-ink p-5 sm:max-w-2xl sm:rounded-3xl">
+          <div class="flex items-center justify-between gap-3">
+            <h3 class="text-lg text-white">Coincidencias</h3>
+            <button class="btn-secondary !px-3 !py-1.5 text-xs" type="button" @click="ui.showCandidatesModal = false">
+              Cerrar
+            </button>
+          </div>
+
+          <ul v-if="result?.candidates?.length" class="mt-4 space-y-2">
+            <li
+              v-for="item in result.candidates"
+              :key="`${item.CodClie}-${item.Clase}`"
+              class="flex items-center justify-between gap-3 rounded-xl border border-white/15 bg-white/10 px-3 py-2 text-sm"
+            >
+              <span class="min-w-0 truncate">{{ item.CodClie }} | {{ item.Clase }} | {{ item.Descrip }}</span>
+              <button class="btn-secondary !px-3 !py-1.5 text-xs" type="button" @click="selectCandidate(item.CodClie || '')">
+                Seleccionar
+              </button>
+            </li>
+          </ul>
+          <p v-else class="mt-4 text-sm text-slate-200">Sin coincidencias adicionales.</p>
         </div>
       </div>
     </template>
