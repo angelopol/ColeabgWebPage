@@ -147,6 +147,7 @@ export const createSupportTask = async (payload: {
   module?: string
   taskDate?: string
   status?: SupportTaskStatus
+  completedAt?: string
 }) => {
   await ensureSupportTasksTable()
 
@@ -160,6 +161,7 @@ export const createSupportTask = async (payload: {
   request.input('module', sql.NVarChar(120), payload.module?.trim() || null)
   request.input('taskDate', sql.Date, payload.taskDate || null)
   request.input('status', sql.NVarChar(20), status)
+  request.input('completedAt', sql.DateTime2, payload.completedAt || null)
 
   const result = await request.query<SupportTaskRow>(`
     INSERT INTO dbo.SupportTasks (title, description, keywords, module, taskDate, status, completedAt)
@@ -181,7 +183,11 @@ export const createSupportTask = async (payload: {
       @module,
       @taskDate,
       @status,
-      CASE WHEN @status = 'finalizada' THEN SYSDATETIME() ELSE NULL END
+      CASE
+        WHEN @status = 'finalizada' AND @completedAt IS NOT NULL THEN @completedAt
+        WHEN @status = 'finalizada' THEN SYSDATETIME()
+        ELSE NULL
+      END
     )
   `)
 

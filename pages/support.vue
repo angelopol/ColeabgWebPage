@@ -37,6 +37,7 @@ const loadingTasks = ref(false)
 const createPending = ref(false)
 const updatePending = ref(false)
 const reportPending = ref(false)
+const importPending = ref(false)
 
 const actionMessage = ref('')
 const actionError = ref('')
@@ -92,13 +93,19 @@ const reportForm = reactive({
   para: 'Junta Directiva'
 })
 
+const bulkForm = reactive({
+  entriesText: '',
+  module: ''
+})
+
 const reportResult = ref<SupportReport | null>(null)
 
 const ui = reactive({
   showCreateModal: false,
   showFilterModal: false,
   showReportModal: false,
-  showEditModal: false
+  showEditModal: false,
+  showBulkImportModal: false
 })
 
 const activeTaskTab = ref<SupportTaskStatus>('pendiente')
@@ -235,6 +242,7 @@ const handleSupportAuthError = (error: unknown) => {
   ui.showFilterModal = false
   ui.showReportModal = false
   ui.showEditModal = false
+  ui.showBulkImportModal = false
   gate.granted = false
   gate.password = ''
   gate.error = 'Tu sesion de soporte vencio. Vuelve a ingresar la clave.'
@@ -453,6 +461,39 @@ const clearFilters = async () => {
   filters.toDate = ''
   filters.keyword = ''
   await loadTasks()
+}
+
+const importFinalizedFromList = async () => {
+  importPending.value = true
+  actionMessage.value = ''
+  actionError.value = ''
+
+  try {
+    const response = await $fetch<{
+      ok: true
+      importedCount: number
+    }>('/api/support/tasks/import', {
+      method: 'POST',
+      body: {
+        entriesText: bulkForm.entriesText,
+        module: bulkForm.module.trim() || undefined
+      }
+    })
+
+    ui.showBulkImportModal = false
+    bulkForm.entriesText = ''
+    bulkForm.module = ''
+    await loadTasks()
+    actionMessage.value = `${response.importedCount} actividades finalizadas importadas correctamente.`
+  } catch (error: unknown) {
+    if (handleSupportAuthError(error)) {
+      return
+    }
+
+    actionError.value = parseErrorMessage(error, 'No se pudo importar el listado de actividades.')
+  } finally {
+    importPending.value = false
+  }
 }
 
 const generateReport = async () => {
@@ -766,6 +807,9 @@ onMounted(async () => {
           <button class="btn-secondary !w-full !px-3 !py-2 text-xs sm:!w-auto sm:text-sm" type="button" @click="ui.showCreateModal = true">
             Nueva tarea
           </button>
+          <button class="btn-secondary !w-full !px-3 !py-2 text-xs sm:!w-auto sm:text-sm" type="button" @click="ui.showBulkImportModal = true">
+            Carga finalizadas
+          </button>
           <button class="btn-secondary !w-full !px-3 !py-2 text-xs sm:!w-auto sm:text-sm" type="button" @click="ui.showFilterModal = true">
             Filtros
           </button>
@@ -1016,6 +1060,43 @@ onMounted(async () => {
                 Limpiar filtros
               </button>
             </div>
+          </form>
+        </div>
+      </div>
+
+      <div
+        v-if="ui.showBulkImportModal"
+        class="fixed inset-0 z-40 flex items-end justify-center bg-black/70 p-0 sm:items-center sm:p-4"
+        @click.self="ui.showBulkImportModal = false"
+      >
+        <div class="w-full max-h-[92vh] overflow-y-auto rounded-t-3xl border border-white/20 bg-ink p-5 sm:max-w-2xl sm:rounded-3xl">
+          <div class="flex items-center justify-between gap-3">
+            <h2 class="text-xl text-white">Carga masiva de finalizadas</h2>
+            <button class="btn-secondary !px-3 !py-1.5 text-xs" type="button" @click="ui.showBulkImportModal = false">Cerrar</button>
+          </div>
+
+          <p class="mt-3 text-xs text-slate-300">
+            Formato por linea: {titulo};{fecha}. Fechas aceptadas: YYYY-MM-DD o DD/MM/YYYY.
+          </p>
+
+          <form class="mt-4 space-y-3" @submit.prevent="importFinalizedFromList">
+            <input
+              v-model="bulkForm.module"
+              type="text"
+              class="field"
+              placeholder="Modulo para todas las lineas (opcional)"
+            />
+
+            <textarea
+              v-model="bulkForm.entriesText"
+              class="field min-h-56"
+              placeholder="Renovacion de acceso movil;2026-04-06&#10;Carga de respaldo sistema;06/04/2026"
+              required
+            />
+
+            <button class="btn-primary w-full" :disabled="importPending" type="submit">
+              {{ importPending ? 'Importando...' : 'Importar actividades finalizadas' }}
+            </button>
           </form>
         </div>
       </div>
