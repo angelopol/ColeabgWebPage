@@ -1,8 +1,8 @@
 {
-  "id": "/app-search-support",
-  "name": "Colegio de Abogados del Estado Carabobo",
-  "short_name": "Colegio Abogados",
-  "description": "Portal institucional con accesos principales a consultas (search) y soporte interno (support).",
+  "id": "/app-search",
+  "name": "Colegio de Abogados - Search",
+  "short_name": "Colegio Search",
+  "description": "Acceso principal al modulo de consultas de operaciones.",
   "lang": "es-VE",
   "start_url": "/search",
   "scope": "/",
@@ -26,7 +26,7 @@
     {
       "name": "Soporte Interno",
       "short_name": "Support",
-      "description": "Ir directo al modulo interno de soporte.",
+      "description": "Ir directo al modulo de soporte.",
       "url": "/support",
       "icons": [
         {

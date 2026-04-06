@@ -28,10 +28,6 @@ export default defineNuxtConfig({
         {
           rel: 'apple-touch-icon',
           href: '/logo.png'
-        },
-        {
-          rel: 'manifest',
-          href: '/manifest.json'
         }
       ]
     }

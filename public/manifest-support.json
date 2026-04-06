@@ -1,0 +1,51 @@
+{
+  "id": "/app-support",
+  "name": "Colegio de Abogados - Support",
+  "short_name": "Colegio Support",
+  "description": "Acceso principal al modulo interno de soporte.",
+  "lang": "es-VE",
+  "start_url": "/support",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#4d1a33",
+  "theme_color": "#5f213e",
+  "orientation": "portrait-primary",
+  "shortcuts": [
+    {
+      "name": "Soporte Interno",
+      "short_name": "Support",
+      "description": "Ir directo al modulo de soporte.",
+      "url": "/support",
+      "icons": [
+        {
+          "src": "/logo.png",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Consultas",
+      "short_name": "Search",
+      "description": "Ir directo al modulo de consultas.",
+      "url": "/search",
+      "icons": [
+        {
+          "src": "/favicon.png",
+          "type": "image/png"
+        }
+      ]
+    }
+  ],
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/logo.png",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

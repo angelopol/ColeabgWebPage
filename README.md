@@ -83,6 +83,19 @@ npm install
 npm run dev
 ```
 
+## Instalacion de app por ruta principal
+
+La instalacion ahora ofrece dos variantes principales segun la ruta donde abras la opcion de instalar del navegador:
+
+1. `search`: abre la app en `/search` (manifiesto `public/manifest-search.json`).
+2. `support`: abre la app en `/support` (manifiesto `public/manifest-support.json`).
+
+Notas:
+
+1. Si quieres instalar la app para soporte, entra primero en `/support` y luego usa "Instalar aplicacion" del navegador.
+2. Si quieres instalar la app para consultas, entra primero en `/search` y luego instala.
+3. Ambas variantes incluyen accesos directos a `search` y `support`.
+
 ## Notas tecnicas
 
 - SQL Server se maneja desde `server/utils/db.ts` y `server/utils/repositories.ts`.
