@@ -10,16 +10,14 @@ const links = computed(() => {
       { to: '/', label: 'Inicio' },
       { to: '/auth/login', label: 'Ingresar' },
       { to: '/auth/register', label: 'Registro' },
-      { to: '/search', label: 'Consulta' },
-      { to: '/support', label: 'Soporte' }
+      { to: '/search', label: 'Consulta' }
     ]
   }
 
   const base = [
     { to: '/dashboard', label: 'Dashboard' },
     { to: '/search', label: 'Buscador' },
-    { to: '/workers', label: 'Asistencia' },
-    { to: '/support', label: 'Soporte' }
+    { to: '/workers', label: 'Asistencia' }
   ]
 
   if (user.value.role === 'admin') {

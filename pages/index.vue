@@ -30,21 +30,5 @@ const { user } = useAuth()
       </div>
     </div>
 
-    <div class="fixed bottom-4 right-4 z-20">
-      <div class="mb-2 hidden max-w-xs rounded-xl border border-vino-200/40 bg-vino-50/95 p-4 shadow-xl sm:block">
-        <p class="text-sm font-semibold text-vino-900">
-          Necesitas ayuda? Pulsa el boton para contactar soporte.
-        </p>
-      </div>
-      <NuxtLink to="/support" class="block">
-        <img
-          src="/contact2.png"
-          alt="Soporte"
-          width="100"
-          height="100"
-          class="transition hover:scale-105"
-        >
-      </NuxtLink>
-    </div>
   </section>
 </template>
