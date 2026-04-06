@@ -185,6 +185,7 @@ export const createSupportTask = async (payload: {
       @status,
       CASE
         WHEN @status = 'finalizada' AND @completedAt IS NOT NULL THEN @completedAt
+        WHEN @status = 'finalizada' AND @taskDate IS NOT NULL THEN CAST(@taskDate AS DATETIME2)
         WHEN @status = 'finalizada' THEN SYSDATETIME()
         ELSE NULL
       END
@@ -211,6 +212,7 @@ export const updateSupportTask = async (
   request.input('id', sql.Int, id)
 
   const fields: string[] = []
+  let taskDateInputBound = false
 
   if (typeof payload.title === 'string') {
     request.input('title', sql.NVarChar(220), payload.title.trim())
@@ -234,13 +236,21 @@ export const updateSupportTask = async (
 
   if (payload.taskDate !== undefined) {
     request.input('taskDate', sql.Date, payload.taskDate || null)
+    taskDateInputBound = true
     fields.push('taskDate = @taskDate')
   }
 
   if (payload.status !== undefined) {
+    if (!taskDateInputBound) {
+      request.input('taskDate', sql.Date, null)
+      taskDateInputBound = true
+    }
+
     request.input('status', sql.NVarChar(20), payload.status)
     fields.push('status = @status')
-    fields.push("completedAt = CASE WHEN @status = 'finalizada' THEN SYSDATETIME() ELSE NULL END")
+    fields.push(
+      "completedAt = CASE WHEN @status = 'finalizada' THEN COALESCE(CAST(@taskDate AS DATETIME2), CAST(taskDate AS DATETIME2), SYSDATETIME()) ELSE NULL END"
+    )
   }
 
   if (!fields.length) {

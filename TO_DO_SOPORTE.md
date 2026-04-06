@@ -206,8 +206,9 @@ keywords = join(tokens, ", ")
 
 Reglas:
 
-1. Si status pasa a finalizada, completedAt = SYSDATETIME().
-2. Si status pasa a pendiente, completedAt = NULL.
+1. Si status pasa a finalizada y existe taskDate, completedAt = taskDate (00:00:00).
+2. Si status pasa a finalizada y no existe taskDate, completedAt = SYSDATETIME().
+3. Si status pasa a pendiente, completedAt = NULL.
 
 Esto aplica en:
 
@@ -244,13 +245,30 @@ Consulta de reporte:
 ### 8.2 Flujo De Registro De Actividad
 
 1. Usuario abre modal Nueva tarea.
-2. Ingresa titulo (obligatorio), modulo (opcional), descripcion (opcional), fecha, checkbox finalizada.
+2. Ingresa titulo (obligatorio), modulo (opcional), descripcion (opcional), fecha DD/MM/YEAR, checkbox finalizada.
 3. Front envia POST /api/support/tasks.
 4. Backend genera keywords desde el titulo.
-5. Se inserta fila con status inicial y completedAt segun estado.
+5. Si status inicial es finalizada y hay taskDate, completedAt toma esa misma fecha.
 6. Front refresca listado.
 
-### 8.3 Flujo De Edicion
+### 8.3 Migracion De Fechas Finalizadas
+
+Objetivo:
+
+1. Sincronizar completedAt con la fecha de taskDate para actividades finalizadas ya existentes.
+2. Si taskDate es NULL, usar CAST(createdAt AS DATE) como respaldo.
+
+Script preparado:
+
+1. server/migrations/20260406_supporttasks_sync_completedAt_with_taskDate.sql
+
+Ejecucion recomendada:
+
+1. Revisar la previsualizacion del script.
+2. Ejecutar en ventana de mantenimiento.
+3. Confirmar updatedRows al finalizar.
+
+### 8.4 Flujo De Edicion
 
 1. Usuario abre modal Editar tarea.
 2. Ajusta campos o estatus.
@@ -258,7 +276,7 @@ Consulta de reporte:
 4. Backend actualiza registro y timestamps.
 5. Front refresca listado.
 
-### 8.4 Flujo De Reporte
+### 8.5 Flujo De Reporte
 
 1. Usuario abre modal Generar reporte.
 2. Indica fromDate, toDate, deParte, para.
@@ -269,7 +287,7 @@ Consulta de reporte:
 	- Descargar DOC
 	- Exportar/Compartir PDF
 
-### 8.5 Flujo Exportar/Compartir PDF
+### 8.6 Flujo Exportar/Compartir PDF
 
 1. Front arma PDF basico en cliente (sin libreria externa).
 2. Si el navegador soporta Web Share con archivos:
@@ -419,10 +437,16 @@ API:
 4. server/api/support/tasks.post.ts
 5. server/api/support/tasks/[id].patch.ts
 6. server/api/support/report.post.ts
+7. server/api/support/tasks/import.post.ts
 
 Utilidades:
 
 1. server/utils/support-access.ts
 2. server/utils/support-tasks.ts
-3. server/utils/db.ts
+3. server/utils/support-keywords.ts
+4. server/utils/db.ts
+
+Migraciones:
+
+1. server/migrations/20260406_supporttasks_sync_completedAt_with_taskDate.sql
 
