@@ -48,6 +48,64 @@ const defaultFrom = new Date(today.getTime() - 1000 * 60 * 60 * 24 * 7)
   .toISOString()
   .slice(0, 10)
 
+const toDisplayDate = (value: string | null | undefined) => {
+  if (!value) {
+    return ''
+  }
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    const [year, month, day] = value.split('-')
+    return `${day}/${month}/${year}`
+  }
+
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) {
+    return ''
+  }
+
+  const day = String(date.getDate()).padStart(2, '0')
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const year = String(date.getFullYear())
+  return `${day}/${month}/${year}`
+}
+
+const parseDisplayDateToIso = (value: string) => {
+  const trimmed = value.trim()
+
+  if (!trimmed) {
+    return ''
+  }
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    return trimmed
+  }
+
+  const match = trimmed.match(/^(\d{2})\/(\d{2})\/(\d{4})$/)
+  if (!match) {
+    return null
+  }
+
+  const [, day, month, year] = match
+  const dayNum = Number(day)
+  const monthNum = Number(month)
+  const yearNum = Number(year)
+  const parsedDate = new Date(yearNum, monthNum - 1, dayNum)
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    return null
+  }
+
+  if (
+    parsedDate.getFullYear() !== yearNum ||
+    parsedDate.getMonth() + 1 !== monthNum ||
+    parsedDate.getDate() !== dayNum
+  ) {
+    return null
+  }
+
+  return `${year}-${month}-${day}`
+}
+
 const filters = reactive<{
   status: TaskFilterStatus
   fromDate: string
@@ -64,7 +122,7 @@ const createForm = reactive({
   title: '',
   description: '',
   module: '',
-  taskDate: defaultTo,
+  taskDate: toDisplayDate(defaultTo),
   markAsCompleted: false
 })
 
@@ -263,7 +321,7 @@ const resetCreateForm = () => {
   createForm.title = ''
   createForm.description = ''
   createForm.module = ''
-  createForm.taskDate = defaultTo
+  createForm.taskDate = toDisplayDate(defaultTo)
   createForm.markAsCompleted = false
 }
 
@@ -344,6 +402,14 @@ const createTask = async () => {
   actionMessage.value = ''
   actionError.value = ''
 
+  const normalizedTaskDate = parseDisplayDateToIso(createForm.taskDate)
+
+  if (createForm.taskDate.trim() && !normalizedTaskDate) {
+    createPending.value = false
+    actionError.value = 'La fecha de la actividad debe tener formato DD/MM/YEAR.'
+    return
+  }
+
   try {
     await $fetch('/api/support/tasks', {
       method: 'POST',
@@ -351,7 +417,7 @@ const createTask = async () => {
         title: createForm.title,
         description: createForm.description.trim() || undefined,
         module: createForm.module.trim() || undefined,
-        taskDate: createForm.taskDate,
+        taskDate: normalizedTaskDate || undefined,
         status: createForm.markAsCompleted ? 'finalizada' : 'pendiente'
       }
     })
@@ -999,7 +1065,15 @@ onMounted(async () => {
 
             <div class="grid gap-3 sm:grid-cols-2">
               <input v-model="createForm.module" type="text" class="field" placeholder="Modulo (opcional)" />
-              <input v-model="createForm.taskDate" type="date" class="field" />
+              <input
+                v-model="createForm.taskDate"
+                type="text"
+                inputmode="numeric"
+                class="field"
+                placeholder="DD/MM/YEAR"
+                maxlength="10"
+                pattern="\d{2}/\d{2}/\d{4}"
+              />
             </div>
 
             <textarea
