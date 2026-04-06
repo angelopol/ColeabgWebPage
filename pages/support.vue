@@ -231,37 +231,26 @@ const escapeHtml = (value: string) => {
 }
 
 const buildReportHtml = (report: SupportReport) => {
-  const rows = report.tasks
+  const detailedItems = report.tasks
     .map(
-      (task) =>
-        `<tr>
-          <td>${escapeHtml(task.title)}</td>
-          <td>${escapeHtml(task.module || '-')}</td>
-          <td>${escapeHtml(formatDate(task.completedAt))}</td>
-        </tr>`
+      (task, index) =>
+        `<li>
+          <p class="activity-title">${index + 1}. ${escapeHtml(task.title)}</p>
+          <p class="activity-meta"><strong>Modulo:</strong> ${escapeHtml(task.module || '-')}</p>
+          <p class="activity-meta"><strong>Fecha finalizada:</strong> ${escapeHtml(formatDate(task.completedAt))}</p>
+        </li>`
     )
     .join('')
 
-  const titleListItems = report.tasks
+  const simpleItems = report.tasks
     .map((task) => `<li>${escapeHtml(task.title)}</li>`)
     .join('')
 
-  const activitiesContent = report.showActivityDate
-    ? `<table>
-    <thead>
-      <tr>
-        <th>Actividad</th>
-        <th>Modulo</th>
-        <th>Fecha finalizada</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${rows || '<tr><td colspan="3">No se registraron actividades finalizadas en el rango indicado.</td></tr>'}
-    </tbody>
-  </table>`
-    : report.tasks.length
-      ? `<ul class="simple-list">${titleListItems}</ul>`
-      : '<p class="empty">No se registraron actividades finalizadas en el rango indicado.</p>'
+  const activitiesContent = !report.tasks.length
+    ? '<p class="empty">No se registraron actividades finalizadas en el rango indicado.</p>'
+    : report.showActivityDate
+      ? `<ol class="activity-detailed">${detailedItems}</ol>`
+      : `<ul class="simple-list">${simpleItems}</ul>`
 
   return `<!DOCTYPE html>
 <html lang="es">
@@ -269,39 +258,125 @@ const buildReportHtml = (report: SupportReport) => {
   <meta charset="UTF-8" />
   <title>Reporte de soporte</title>
   <style>
-    body { font-family: Arial, sans-serif; color: #111827; margin: 30px; }
-    h1 { margin: 0 0 6px; font-size: 20px; text-transform: uppercase; }
-    h2 { margin: 0 0 20px; font-size: 14px; color: #374151; }
-    .meta { margin-bottom: 14px; font-size: 13px; }
-    .meta p { margin: 4px 0; }
-    table { width: 100%; border-collapse: collapse; margin-top: 14px; font-size: 12px; }
-    th, td { border: 1px solid #d1d5db; padding: 8px; vertical-align: top; text-align: left; }
-    th { background: #f3f4f6; }
-    .simple-list { margin: 14px 0 0; padding-left: 22px; font-size: 13px; }
-    .simple-list li { margin: 6px 0; }
-    .empty { margin-top: 14px; font-size: 13px; color: #374151; }
-    .footer { margin-top: 30px; font-size: 12px; }
-    .signs { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-top: 36px; }
-    .line { border-top: 1px solid #9ca3af; padding-top: 6px; }
+    @page { size: A4; margin: 26mm 18mm 22mm; }
+    body {
+      font-family: "Times New Roman", Times, serif;
+      color: #111827;
+      margin: 0;
+      font-size: 12pt;
+      line-height: 1.4;
+    }
+    .document {
+      max-width: 780px;
+      margin: 0 auto;
+    }
+    .header {
+      border-bottom: 1px solid #9ca3af;
+      padding-bottom: 12px;
+      margin-bottom: 14px;
+    }
+    h1 {
+      margin: 0;
+      font-size: 21pt;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+      text-transform: uppercase;
+    }
+    h2 {
+      margin: 8px 0 0;
+      font-size: 14pt;
+      font-weight: 700;
+      color: #1f2937;
+    }
+    .meta {
+      border-bottom: 1px solid #9ca3af;
+      padding-bottom: 12px;
+      margin-bottom: 16px;
+      font-size: 12pt;
+    }
+    .meta p {
+      margin: 4px 0;
+    }
+    h3 {
+      margin: 0 0 8px;
+      font-size: 14pt;
+      font-weight: 700;
+    }
+    .activity-detailed {
+      margin: 0;
+      padding-left: 22px;
+    }
+    .activity-detailed li {
+      margin: 0 0 12px;
+      padding: 0 0 8px;
+      border-bottom: 1px solid #e5e7eb;
+      break-inside: avoid;
+    }
+    .activity-title {
+      margin: 0 0 4px;
+      font-weight: 700;
+      font-size: 12.5pt;
+    }
+    .activity-meta {
+      margin: 0;
+      font-size: 11.5pt;
+      color: #374151;
+    }
+    .simple-list {
+      margin: 0;
+      padding-left: 22px;
+      font-size: 12.5pt;
+    }
+    .simple-list li {
+      margin: 0 0 7px;
+      break-inside: avoid;
+    }
+    .empty {
+      margin: 0;
+      font-size: 12pt;
+      color: #374151;
+      font-style: italic;
+    }
+    .footer {
+      border-top: 1px solid #9ca3af;
+      margin-top: 24px;
+      padding-top: 10px;
+      font-size: 11.5pt;
+    }
+    .footer p {
+      margin: 4px 0;
+    }
+    .signature {
+      margin-top: 10px;
+      font-weight: 700;
+    }
   </style>
 </head>
 <body>
-  <h1>Colegio de Abogados del Estado Carabobo</h1>
-  <h2>Reporte de actividades finalizadas del equipo de soporte</h2>
+  <div class="document">
+    <header class="header">
+      <h1>Colegio de Abogados del Estado Carabobo</h1>
+      <h2>Reporte de actividades finalizadas del equipo de soporte</h2>
+    </header>
 
-  <div class="meta">
-    <p><strong>Rango:</strong> ${escapeHtml(formatDate(report.fromDate))} al ${escapeHtml(formatDate(report.toDate))}</p>
-    <p><strong>De parte:</strong> ${escapeHtml(report.deParte)}</p>
-    <p><strong>Para:</strong> ${escapeHtml(report.para)}</p>
-    <p><strong>Formato:</strong> ${report.showActivityDate ? 'Con modulo y fecha' : 'Lista simple de titulos'}</p>
-    <p><strong>Generado:</strong> ${escapeHtml(formatDateTime(report.generatedAt))}</p>
-  </div>
+    <div class="meta">
+      <p><strong>Rango:</strong> ${escapeHtml(formatDate(report.fromDate))} al ${escapeHtml(formatDate(report.toDate))}</p>
+      <p><strong>De parte:</strong> ${escapeHtml(report.deParte)}</p>
+      <p><strong>Para:</strong> ${escapeHtml(report.para)}</p>
+      <p><strong>Formato:</strong> ${report.showActivityDate ? 'Con modulo y fecha' : 'Lista simple de titulos'}</p>
+      <p><strong>Generado:</strong> ${escapeHtml(formatDateTime(report.generatedAt))}</p>
+    </div>
 
-  ${activitiesContent}
+    <main>
+      <h3>Actividades</h3>
+      ${activitiesContent}
+    </main>
 
-  <div class="footer">
-    <p>Documento generado desde el modulo interno de soporte.</p>
-    <p>Saludos,<br>${escapeHtml(report.deParte)}</p>
+    <footer class="footer">
+      <p>Documento generado desde el modulo interno de soporte.</p>
+      <p>Saludos,</p>
+      <p class="signature">${escapeHtml(report.deParte)}</p>
+    </footer>
   </div>
 </body>
 </html>`
@@ -687,46 +762,151 @@ const wrapPdfLine = (line: string, maxChars = 92) => {
 }
 
 const buildReportPdfBytes = (report: SupportReport) => {
-  const baseLines = [
-    'Colegio de Abogados del Estado Carabobo',
-    'Reporte de actividades finalizadas del equipo de soporte',
+  const streamLines: string[] = []
+  const leftMargin = 54
+  const rightMargin = 541
+  const footerLimitY = 128
+
+  const addTextAt = (
+    text: string,
+    opts: {
+      x: number
+      y: number
+      font: 'F1' | 'F2'
+      size: number
+    }
+  ) => {
+    streamLines.push(
+      `BT /${opts.font} ${opts.size} Tf ${opts.x} ${opts.y} Td (${escapePdfText(text)}) Tj ET`
+    )
+  }
+
+  const addRule = (y: number) => {
+    streamLines.push(`0.6 w ${leftMargin - 10} ${y} m ${rightMargin} ${y} l S`)
+  }
+
+  let cursorY = 804
+  addTextAt('Colegio de Abogados del Estado Carabobo', {
+    x: leftMargin,
+    y: cursorY,
+    font: 'F2',
+    size: 18
+  })
+
+  cursorY -= 24
+  addTextAt('Reporte de actividades finalizadas del equipo de soporte', {
+    x: leftMargin,
+    y: cursorY,
+    font: 'F2',
+    size: 12
+  })
+
+  addRule(764)
+
+  cursorY = 742
+  const metadataLines = [
     `Rango: ${formatDate(report.fromDate)} al ${formatDate(report.toDate)}`,
     `De parte: ${report.deParte}`,
     `Para: ${report.para}`,
-    `Generado: ${formatDateTime(report.generatedAt)}`,
-    '',
-    'Actividades:'
+    `Formato: ${report.showActivityDate ? 'Con modulo y fecha' : 'Lista simple de titulos'}`,
+    `Generado: ${formatDateTime(report.generatedAt)}`
   ]
 
+  for (const metadataLine of metadataLines) {
+    addTextAt(metadataLine, {
+      x: leftMargin,
+      y: cursorY,
+      font: 'F1',
+      size: 11
+    })
+    cursorY -= 15
+  }
+
+  addRule(cursorY + 4)
+  cursorY -= 14
+
+  addTextAt('Actividades', {
+    x: leftMargin,
+    y: cursorY,
+    font: 'F2',
+    size: 13
+  })
+  cursorY -= 18
+
+  const activityLines: string[] = []
   if (!report.tasks.length) {
-    baseLines.push('- No se registraron actividades finalizadas en el rango indicado.')
+    activityLines.push('No se registraron actividades finalizadas en el rango indicado.')
+  } else if (report.showActivityDate) {
+    report.tasks.forEach((activity, index) => {
+      activityLines.push(`${index + 1}. ${activity.title}`)
+      activityLines.push(`   Modulo: ${activity.module || '-'}`)
+      activityLines.push(`   Fecha finalizada: ${formatDate(activity.completedAt)}`)
+      activityLines.push('')
+    })
   } else {
-    for (const activity of report.tasks) {
-      baseLines.push(
-        report.showActivityDate
-          ? `- ${activity.title} | Modulo: ${activity.module || '-'} | Fecha finalizada: ${formatDate(activity.completedAt)}`
-          : `- ${activity.title}`
-      )
+    report.tasks.forEach((activity) => {
+      activityLines.push(`- ${activity.title}`)
+    })
+  }
+
+  let truncated = false
+  const lineHeight = 13
+
+  for (const activityLine of activityLines) {
+    const wrapped = wrapPdfLine(activityLine, report.showActivityDate ? 88 : 92)
+    for (const wrappedLine of wrapped) {
+      if (cursorY <= footerLimitY) {
+        truncated = true
+        break
+      }
+
+      if (!wrappedLine) {
+        cursorY -= 5
+        continue
+      }
+
+      addTextAt(wrappedLine, {
+        x: leftMargin,
+        y: cursorY,
+        font: 'F1',
+        size: 11
+      })
+      cursorY -= lineHeight
+    }
+
+    if (truncated) {
+      break
     }
   }
 
-  baseLines.push('', 'Saludos,', report.deParte)
+  if (truncated) {
+    addTextAt('... Se omitieron actividades adicionales por espacio.', {
+      x: leftMargin,
+      y: Math.max(cursorY, footerLimitY),
+      font: 'F1',
+      size: 10
+    })
+  }
 
-  const wrappedLines = baseLines.flatMap((line) => wrapPdfLine(line))
-  const maxLines = 55
-  const finalLines =
-    wrappedLines.length > maxLines
-      ? [...wrappedLines.slice(0, maxLines - 1), '... Se omitieron actividades adicionales por espacio.']
-      : wrappedLines
-
-  const streamLines = ['BT', '/F1 10 Tf', '44 806 Td', '13 TL']
-  finalLines.forEach((line, index) => {
-    streamLines.push(`(${escapePdfText(line)}) Tj`)
-    if (index < finalLines.length - 1) {
-      streamLines.push('T*')
-    }
+  addRule(98)
+  addTextAt('Documento generado desde el modulo interno de soporte.', {
+    x: leftMargin,
+    y: 84,
+    font: 'F1',
+    size: 10
   })
-  streamLines.push('ET')
+  addTextAt('Saludos,', {
+    x: leftMargin,
+    y: 68,
+    font: 'F1',
+    size: 11
+  })
+  addTextAt(report.deParte, {
+    x: leftMargin,
+    y: 52,
+    font: 'F2',
+    size: 11
+  })
 
   const contentStream = streamLines.join('\n')
 
@@ -734,8 +914,9 @@ const buildReportPdfBytes = (report: SupportReport) => {
     '',
     '<< /Type /Catalog /Pages 2 0 R >>',
     '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
-    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>',
-    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
+    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R /F2 5 0 R >> >> /Contents 6 0 R >>',
+    '<< /Type /Font /Subtype /Type1 /BaseFont /Times-Roman >>',
+    '<< /Type /Font /Subtype /Type1 /BaseFont /Times-Bold >>',
     `<< /Length ${contentStream.length} >>\nstream\n${contentStream}\nendstream`
   ]
 
